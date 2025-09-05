@@ -1,0 +1,82 @@
+"AT-Proto Collectible Cards"
+L'objectif est de créer un jeu de collection où les cartes sont des données vérifiables et portables. Chaque carte est un enregistrement (record) sur le PDS de l'utilisateur.
+
+Le concept de base : Un jeu de cartes avec des statistiques simples (attaque, défense, etc.). Les joueurs peuvent échanger des cartes. La rareté de la carte pourrait être une propriété dans l'enregistrement.
+
+L'unicité avec l'AT Protocol :
+
+Propriété réelle : Quand un joueur possède une carte, il en est le véritable propriétaire, stockée sur son propre serveur de données.
+
+Portabilité : S'il change d'hébergeur (de PDS), toutes ses cartes le suivent, car elles sont liées à son identité cryptographique et non à un serveur centralisé.
+
+Échange sécurisé : Les échanges de cartes entre joueurs se font par le transfert d'enregistrements. Le protocole garantit que l'échange est légitime et que les données ne sont pas dupliquées.
+
+Le jeu : Pour le Hackday, le jeu de combat entre les cartes pourrait être très simple. L'objectif principal est de prouver que la collection et l'échange de cartes fonctionnent avec le protocole AT.
+
+Backlog : Version 1.0 (Le MVP du Hackday)
+L'objectif du Hackday est de livrer un produit minimum viable (MVP) qui démontre le concept. Voici les fonctionnalités à prioriser pour y parvenir.
+
+Fonctionnalités "must-have" pour le Hackday :
+
+Création de cartes (côté développeur) :
+
+créer-carte : Une fonction ou un script qui génère un enregistrement de carte (par exemple, un JSON) avec des propriétés (nom, attaque, défense, type) et le publie sur un PDS.
+
+Collection (côté joueur) :
+
+afficher-collection : Une interface web simple (une seule page) pour se connecter à son compte Bluesky (ou un PDS de test) et afficher ses cartes sous forme de liste ou de grille.
+
+Échange de cartes :
+
+demander-echange : Une fonctionnalité qui permet à un joueur de proposer une carte à échanger à un autre. Le protocole AT-Proto n'a pas de transaction intégrée, donc l'échange devra être géré via une série d'opérations :
+
+Le joueur A supprime sa carte.
+
+Le joueur B crée la carte du joueur A sur son PDS.
+
+Le joueur B supprime sa carte.
+
+Le joueur A crée la carte du joueur B sur son PDS.
+Ce processus doit être géré avec précaution, et il est essentiel de s'assurer que les deux parties respectent la procédure pour éviter de perdre des cartes. Un mécanisme de validation mutuelle sera nécessaire.
+
+Backlog : Versions futures
+Ces fonctionnalités peuvent être ajoutées après le Hackday pour améliorer le jeu.
+
+Version 1.1
+
+partager-collection : Un lien public vers la collection d'un joueur.
+
+classement : Une page qui agrège les statistiques des joueurs les plus actifs ou avec les cartes les plus rares.
+
+Version 1.2
+
+combats de cartes : Une interface pour que deux joueurs s'affrontent avec leurs cartes, avec des règles de jeu basiques.
+
+animation : Des animations lors des échanges ou des combats pour rendre l'expérience plus fluide.
+
+Plan de développement pour le Hackday
+Matin (9h - 13h) : Mise en place du projet.
+
+Initialisation d'un projet Node.js.
+
+Intégration du SDK AT-Proto.
+
+Développement du script de création de carte pour le développeur.
+
+Développement de l'interface web pour la collection et le transfert de cartes.
+
+Après-midi (14h - 17h) : Test et affinage.
+
+Test des transferts entre deux comptes de test.
+
+Amélioration de l'interface utilisateur.
+
+Rédiger un article de blog qui explique le projet et les défis relevés.
+
+Fin de journée (17h - 18h) : Démo !
+
+Présentation du jeu.
+
+Partager le code sur GitHub.
+
+Ce plan permet de se concentrer sur les fonctionnalités essentielles pour le Hackday tout en gardant des idées pour le futur.

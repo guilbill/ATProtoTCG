@@ -35,9 +35,9 @@ export const ATProtoCardView: React.FC = () => {
       } else {
         setError(data.error || 'Login failed');
       }
-    } catch (err: any) {
-  const errorMsg = err instanceof Error ? err.message : 'Login failed';
-    setError(errorMsg);
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Login failed';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }

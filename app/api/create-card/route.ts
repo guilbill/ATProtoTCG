@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AtpAgent } from '@atproto/api';
+import { getCreds, getAgent, storeAgent } from '../../lib/sessionStore';
 
 // Node buffer is available in the Next.js server runtime
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { identifier, password, card } = body as {
+  let { identifier, password, card } = body as {
     identifier?: string;
     password?: string;
     card?: {
@@ -17,13 +18,34 @@ export async function POST(req: NextRequest) {
       imageBase64?: string;
     };
   };
+
+  // If no credentials provided, try session cookie
+  if (!identifier || !password) {
+    const sid = req.cookies.get('atp_session')?.value;
+    if (sid) {
+      const creds = getCreds(sid);
+      if (creds) {
+        identifier = creds.identifier;
+        password = creds.password;
+      }
+    }
+  }
+
   if (!identifier || !password || !card) {
     return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
   }
 
   try {
-    const agent = new AtpAgent({ service: 'https://bsky.social' });
-    await agent.login({ identifier, password });
+    // Reuse agent if cached for session
+    let agent: AtpAgent | undefined;
+    const sid = req.cookies.get('atp_session')?.value;
+    if (sid) agent = getAgent(sid);
+    if (!agent) {
+      agent = new AtpAgent({ service: 'https://bsky.social' });
+      await agent.login({ identifier, password });
+      if (sid) storeAgent(sid, agent);
+    }
+
     const did = agent.session?.did;
     if (!did) throw new Error('No DID after login');
 
@@ -49,7 +71,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-  const record: Record<string, unknown> = {
+    const record: Record<string, unknown> = {
       name: card.name,
       attack: card.attack,
       defense: card.defense,

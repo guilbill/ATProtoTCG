@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface Card {
   name: string;
@@ -17,23 +17,24 @@ export const ATProtoCardView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [name, setName] = useState('');
-  const [attack, setAttack] = useState(1);
-  const [defense, setDefense] = useState(1);
-  const [typeField, setTypeField] = useState('');
-  const [rarityField, setRarityField] = useState<'common'|'rare'|'epic'|'legendary'>('common');
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  // cleaned: manual card creation state removed (use Booster page)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/cards', {
+      // POST to /api/login to set session cookie
+      const loginRes = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier, password }),
+        credentials: 'same-origin',
       });
+      const loginData = await loginRes.json();
+      if (!loginRes.ok) throw new Error(loginData.error || 'Login failed');
+      // fetch cards via session-backed /api/cards
+  const res = await fetch('/api/cards', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin' });
       const data = await res.json();
       if (res.ok) {
         setCards(data.cards);
@@ -48,6 +49,40 @@ export const ATProtoCardView: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const handleLogout = async () => {
+    setLoading(true);
+    try {
+      await fetch('/api/logout', { method: 'POST' });
+    } catch (e) {
+      // ignore network errors
+    }
+    setLoggedIn(false);
+    setCards([]);
+    setIdentifier('');
+    setPassword('');
+    setError(null);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    // check session on mount
+    (async () => {
+      try {
+  const s = await fetch('/api/session', { credentials: 'same-origin' });
+        const sd = await s.json();
+        if (s.ok && sd.loggedIn) {
+          setIdentifier(sd.identifier || '');
+          setLoggedIn(true);
+          const r = await fetch('/api/cards', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin' });
+          const rd = await r.json();
+          if (r.ok) setCards(rd.cards);
+        }
+      } catch (e) {
+        // ignore
+      }
+    })();
+  }, []);
 
   return (
     <div style={{ maxWidth: 500, margin: '2rem auto', fontFamily: 'sans-serif' }}>
@@ -77,50 +112,12 @@ export const ATProtoCardView: React.FC = () => {
         </form>
       ) : (
         <div>
-          <h3>Your Cards</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ margin: 0 }}>Your Cards</h3>
+            <button onClick={handleLogout} style={{ padding: '6px 10px', fontSize: 14 }} disabled={loading}>{loading ? 'Please wait...' : 'Logout'}</button>
+          </div>
           <div style={{ marginTop: 12 }}>
-            <h4>Create Card</h4>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="Name" style={{ width: '100%', marginBottom: 8 }} />
-            <input type="number" value={attack} onChange={e => setAttack(Number(e.target.value))} placeholder="Attack" style={{ width: '100%', marginBottom: 8 }} />
-            <input type="number" value={defense} onChange={e => setDefense(Number(e.target.value))} placeholder="Defense" style={{ width: '100%', marginBottom: 8 }} />
-            <input value={typeField} onChange={e => setTypeField(e.target.value)} placeholder="Type" style={{ width: '100%', marginBottom: 8 }} />
-            <select value={rarityField} onChange={e => setRarityField(e.target.value as 'common'|'rare'|'epic'|'legendary')} style={{ width: '100%', marginBottom: 8 }}>
-              <option value="common">common</option>
-              <option value="rare">rare</option>
-              <option value="epic">epic</option>
-              <option value="legendary">legendary</option>
-            </select>
-            <input type="file" accept="image/*" onChange={e => setImageFile(e.target.files ? e.target.files[0] : null)} style={{ width: '100%', marginBottom: 8 }} />
-            <button onClick={async () => {
-              if (!identifier || !password) return setError('You must be logged in');
-              const cardPayload: { name: string; attack: number; defense: number; type: string; rarity: string; imageBase64?: string } = { name, attack, defense, type: typeField, rarity: rarityField };
-              if (imageFile) {
-                const b64 = await new Promise<string>((res, rej) => {
-                  const fr = new FileReader();
-                  fr.onload = () => res((fr.result as string).split(',')[1]);
-                  fr.onerror = rej;
-                  fr.readAsDataURL(imageFile);
-                });
-                cardPayload.imageBase64 = b64;
-              }
-              setLoading(true);
-              try {
-                const r = await fetch('/api/create-card', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ identifier, password, card: cardPayload }),
-                });
-                const d = await r.json();
-                if (!r.ok) throw new Error(d.error || 'Create failed');
-                // Refresh cards
-                const res2 = await fetch('/api/cards', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier, password }) });
-                const data2 = await res2.json();
-                if (res2.ok) setCards(data2.cards);
-              } catch (err) {
-                const msg = err instanceof Error ? err.message : 'Create failed';
-                setError(msg);
-              } finally { setLoading(false); }
-            }} style={{ width: '100%', marginTop: 8 }}>Create Card</button>
+            <p style={{ color: '#444' }}>Card creation moved to the Booster page — open a booster there to create cards.</p>
           </div>
           {cards.length === 0 ? (
             <div>No cards found.</div>
@@ -128,6 +125,12 @@ export const ATProtoCardView: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {cards.map((card, i) => (
                 <div key={i} style={{ border: '1px solid #ccc', borderRadius: 8, padding: 12, background: '#fafafa' }}>
+                  {/** render image if present */}
+                  {('imageCid' in card) && (card as any).imageCid && (
+                    <div style={{ marginBottom: 8 }}>
+                      <img src={`/api/blob?cid=${encodeURIComponent((card as any).imageCid)}`} alt={card.name} style={{ width: '100%', borderRadius: 6 }} />
+                    </div>
+                  )}
                   <strong>{card.name}</strong>
                   <div>Type: {card.type}</div>
                   <div>Attack: {card.attack}</div>

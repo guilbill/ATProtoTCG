@@ -1,14 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AtpAgent } from '@atproto/api';
+import { getCreds, getAgent, storeAgent } from '../../lib/sessionStore';
 
 export async function POST(req: NextRequest) {
-  const { identifier, password } = await req.json();
+  let body: unknown = {};
+  try {
+    body = await req.json();
+  } catch (e) {
+    // empty or invalid JSON body — continue with session lookup
+    body = {};
+  }
+  let { identifier, password } = (body as { identifier?: string; password?: string }) || {};
+
+  // Try session cookie if no credentials in body
+  if (!identifier || !password) {
+    const sid = req.cookies.get('atp_session')?.value;
+    if (sid) {
+      const creds = getCreds(sid);
+      if (creds) {
+        identifier = creds.identifier;
+        password = creds.password;
+      }
+    }
+  }
+
   if (!identifier || !password) {
     return NextResponse.json({ error: 'Missing credentials' }, { status: 400 });
   }
+
   try {
-    const agent = new AtpAgent({ service: 'https://bsky.social' });
-    await agent.login({ identifier, password });
+    let agent: AtpAgent | undefined;
+    const sid = req.cookies.get('atp_session')?.value;
+    if (sid) agent = getAgent(sid);
+    if (!agent) {
+      agent = new AtpAgent({ service: 'https://bsky.social' });
+      await agent.login({ identifier, password });
+      if (sid) storeAgent(sid, agent);
+    }
     const did = agent.session?.did;
     if (!did) throw new Error('No DID after login');
     const res = await agent.com.atproto.repo.listRecords({
@@ -20,7 +48,8 @@ export async function POST(req: NextRequest) {
     attack: number;
     defense: number;
     type: string;
-    rarity: string;
+  rarity: string;
+  imageCid?: string;
     createdAt?: string;
   }
 

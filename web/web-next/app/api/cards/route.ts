@@ -15,9 +15,33 @@ export async function POST(req: NextRequest) {
       repo: did,
       collection: 'app.tcg.card',
     });
-    const cards = res.data.records.map((r: any) => r.value);
+  interface Card {
+    name: string;
+    attack: number;
+    defense: number;
+    type: string;
+    rarity: string;
+    createdAt?: string;
+  }
+
+  function isCard(value: unknown): value is Card {
+    if (typeof value !== 'object' || value === null) return false;
+    const v = value as Record<string, unknown>;
+    return (
+      typeof v.name === 'string' &&
+      typeof v.attack === 'number' &&
+      typeof v.defense === 'number' &&
+      typeof v.type === 'string' &&
+      typeof v.rarity === 'string'
+    );
+  }
+
+  const cards = Array.isArray(res.data.records)
+    ? res.data.records.map((r) => r.value).filter(isCard)
+    : [];
     return NextResponse.json({ cards });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Failed to fetch cards' }, { status: 500 });
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : 'Failed to fetch cards';
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

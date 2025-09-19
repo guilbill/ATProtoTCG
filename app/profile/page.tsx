@@ -9,6 +9,21 @@ interface ATProtoRecord {
   createdAt?: string;
 }
 
+interface BlobInfo {
+  cid: string;
+  size?: number;
+  mimeType?: string;
+  createdAt?: string;
+  recordUri?: string;
+}
+
+interface BlobsData {
+  blobs: BlobInfo[];
+  cursor?: string;
+  totalBlobs: number;
+  hasMore: boolean;
+}
+
 interface ProfileData {
   did: string;
   profile?: {
@@ -28,9 +43,12 @@ interface ProfileData {
 
 export default function ProfilePage() {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [blobsData, setBlobsData] = useState<BlobsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [blobsLoading, setBlobsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
+  const [showBlobs, setShowBlobs] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -60,6 +78,33 @@ export default function ProfilePage() {
 
     fetchProfile();
   }, [router]);
+
+  const fetchBlobs = async () => {
+    setBlobsLoading(true);
+    try {
+      const response = await fetch('/api/blobs', {
+        credentials: 'same-origin'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch blobs');
+      }
+
+      const data = await response.json();
+      setBlobsData(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setBlobsLoading(false);
+    }
+  };
+
+  const handleToggleBlobs = () => {
+    if (!showBlobs) {
+      fetchBlobs();
+    }
+    setShowBlobs(!showBlobs);
+  };
 
   const formatTimestamp = (timestamp: string) => {
     try {
@@ -289,7 +334,169 @@ export default function ProfilePage() {
             </p>
           </div>
         ))}
+        
+        {/* Blobs Section */}
+        <div
+          style={{
+            backgroundColor: 'white',
+            padding: '1.5rem',
+            borderRadius: '8px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            cursor: 'pointer',
+            border: showBlobs ? '2px solid #10b981' : '2px solid transparent',
+            transition: 'all 0.2s ease'
+          }}
+          onClick={handleToggleBlobs}
+        >
+          <h3 style={{ margin: '0 0 1rem 0', color: '#333' }}>
+            Repository Blobs
+          </h3>
+          <p style={{ color: '#666', margin: 0 }}>
+            {blobsData ? `${blobsData.totalBlobs} blob${blobsData.totalBlobs !== 1 ? 's' : ''}` : 'Click to view blobs'}
+          </p>
+          {blobsLoading && <p style={{ color: '#999', fontSize: '12px', margin: '0.5rem 0 0 0' }}>Loading...</p>}
+        </div>
       </div>
+
+      {/* Blobs Display */}
+      {showBlobs && blobsData && (
+        <div style={{
+          backgroundColor: 'white',
+          padding: '2rem',
+          borderRadius: '8px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          marginBottom: '2rem'
+        }}>
+          <h2 style={{ color: '#333', marginBottom: '1rem' }}>
+            Repository Blobs ({blobsData.totalBlobs})
+          </h2>
+          
+          <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
+            {blobsData.blobs.map((blob, index) => (
+              <div
+                key={blob.cid}
+                style={{
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '4px',
+                  padding: '1rem',
+                  marginBottom: '1rem',
+                  backgroundColor: '#f9fafb'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                  <small style={{ color: '#6b7280', fontSize: '12px' }}>
+                    Blob #{index + 1}
+                  </small>
+                  {blob.createdAt && (
+                    <small style={{ color: '#6b7280', fontSize: '12px' }}>
+                      {new Date(blob.createdAt).toLocaleString()}
+                    </small>
+                  )}
+                </div>
+                
+                <div style={{ marginBottom: '0.5rem' }}>
+                  <p style={{ margin: '0.25rem 0', fontSize: '14px' }}>
+                    <strong>MIME Type:</strong> {blob.mimeType || 'unknown'}
+                  </p>
+                  <p style={{ margin: '0.25rem 0', fontSize: '14px' }}>
+                    <strong>Size:</strong> {blob.size ? `${blob.size} bytes` : 'unknown'}
+                  </p>
+                  {blob.recordUri && (
+                    <p style={{ margin: '0.25rem 0', fontSize: '14px' }}>
+                      <strong>Used in:</strong> {blob.recordUri}
+                    </p>
+                  )}
+                  
+                  {/* Download/View Buttons */}
+                  <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem' }}>
+                    <a
+                      href={`/api/blobs/${blob.cid}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        padding: '0.25rem 0.5rem',
+                        backgroundColor: '#3b82f6',
+                        color: 'white',
+                        textDecoration: 'none',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        border: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {blob.mimeType?.startsWith('image/') ? 'View Image' : 'Download'}
+                    </a>
+                    <a
+                      href={`/api/blobs/${blob.cid}`}
+                      download={`blob-${blob.cid}`}
+                      style={{
+                        padding: '0.25rem 0.5rem',
+                        backgroundColor: '#10b981',
+                        color: 'white',
+                        textDecoration: 'none',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        border: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Download
+                    </a>
+                  </div>
+                </div>
+                
+                <details style={{ marginTop: '0.5rem' }}>
+                  <summary style={{ cursor: 'pointer', color: '#6b7280', fontSize: '12px' }}>
+                    Technical Details
+                  </summary>
+                  <div style={{ marginTop: '0.5rem', fontSize: '11px', color: '#6b7280' }}>
+                    <p><strong>CID:</strong> {blob.cid}</p>
+                    {blob.mimeType?.startsWith('image/') && (
+                      <div style={{ marginTop: '0.5rem' }}>
+                        <strong>Preview:</strong>
+                        <div style={{ marginTop: '0.25rem' }}>
+                          <img
+                            src={`/api/blobs/${blob.cid}`}
+                            alt={`Blob ${blob.cid}`}
+                            style={{
+                              maxWidth: '200px',
+                              maxHeight: '150px',
+                              objectFit: 'contain',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '4px',
+                              backgroundColor: '#f9fafb'
+                            }}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const errorDiv = document.createElement('div');
+                              errorDiv.style.cssText = `
+                                width: 200px; 
+                                height: 150px; 
+                                backgroundColor: #f3f4f6; 
+                                border: 1px solid #d1d5db;
+                                border-radius: 4px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                font-size: 12px;
+                                color: #6b7280;
+                              `;
+                              errorDiv.textContent = 'Image preview failed';
+                              target.parentNode?.insertBefore(errorDiv, target.nextSibling);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </details>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
 
       {/* Selected Collection Details */}
       {selectedCollection && profileData.records[selectedCollection] && (

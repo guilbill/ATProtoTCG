@@ -2,6 +2,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { FancyCard } from './components/FancyCard';
 
 interface Card {
   name: string;
@@ -158,52 +159,12 @@ export default function Home() {
         ) : (
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
-            gap: '1rem' 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', 
+            gap: '2rem',
+            justifyItems: 'center'
           }}>
             {cards.map((card, i) => (
-              <div 
-                key={i} 
-                style={{ 
-                  border: '1px solid #ddd', 
-                  borderRadius: '8px', 
-                  padding: '1rem', 
-                  backgroundColor: '#fafafa',
-                  transition: 'transform 0.2s',
-                  cursor: 'pointer'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-              >
-                {card.imageCid && (
-                  <div style={{ marginBottom: '0.5rem' }}>
-                    <img 
-                      src={`/api/blob?cid=${encodeURIComponent(card.imageCid)}`} 
-                      alt={card.name} 
-                      style={{ 
-                        width: '100%', 
-                        borderRadius: '6px',
-                        aspectRatio: '3/4',
-                        objectFit: 'cover'
-                      }} 
-                    />
-                  </div>
-                )}
-                <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '16px' }}>{card.name}</h3>
-                <div style={{ fontSize: '14px', color: '#666' }}>
-                  <div>Type: {card.type}</div>
-                  <div>Attack: {card.attack}</div>
-                  <div>Defense: {card.defense}</div>
-                  <div style={{ 
-                    textTransform: 'capitalize',
-                    color: card.rarity === 'legendary' ? '#ff6b35' : 
-                           card.rarity === 'epic' ? '#8b5cf6' :
-                           card.rarity === 'rare' ? '#3b82f6' : '#6b7280'
-                  }}>
-                    {card.rarity}
-                  </div>
-                </div>
-              </div>
+              <FancyCard key={i} card={card} revealed={true} />
             ))}
           </div>
         )}

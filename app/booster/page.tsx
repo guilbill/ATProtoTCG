@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { FancyCard } from '../components/FancyCard';
 
 const IMAGE_DIR = '/MAGIC%20React%20Admin/';
 
@@ -180,57 +181,27 @@ export default function BoosterPage() {
           marginBottom: '3rem',
           flexWrap: 'wrap'
         }}>
-          {cards.map((cardImage, i) => (
-            <div 
-              key={i} 
-              style={{ 
-                width: '200px',
-                border: '2px solid #ddd',
-                borderRadius: '12px',
-                padding: '1rem',
-                backgroundColor: opened ? '#fff' : '#e9ecef',
-                transition: 'all 0.3s ease',
-                transform: opened ? 'scale(1.05)' : 'scale(1)'
-              }}
-            >
-              {opened ? (
-                <>
-                  <img 
-                    src={`${IMAGE_DIR}${encodeURIComponent(cardImage)}`} 
-                    alt={cardImage} 
-                    style={{ 
-                      width: '100%', 
-                      borderRadius: '8px',
-                      aspectRatio: '3/4',
-                      objectFit: 'cover'
-                    }} 
-                  />
-                  <div style={{ 
-                    marginTop: '0.5rem', 
-                    fontSize: '14px', 
-                    fontWeight: 'bold',
-                    color: '#333'
-                  }}>
-                    {cardImage.replace(/\.JPEG$/i, '').replace(/_/g, ' ')}
-                  </div>
-                </>
-              ) : (
-                <div style={{
-                  height: '240px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: '#6c757d',
-                  borderRadius: '8px',
-                  color: 'white',
-                  fontSize: '18px',
-                  fontWeight: 'bold'
-                }}>
-                  ?
-                </div>
-              )}
-            </div>
-          ))}
+          {cards.map((cardImage, i) => {
+            // Create a temporary card object for display
+            const displayCard = {
+              name: cardImage.replace(/\.JPEG$/i, '').replace(/_/g, ' '),
+              attack: Math.floor(Math.random() * 10) + 1,
+              defense: Math.floor(Math.random() * 10) + 1,
+              type: 'magic',
+              rarity: (['common', 'rare', 'epic', 'legendary'] as const)[Math.floor(Math.random() * 4)]
+            };
+            
+            const imageUrl = opened ? `${IMAGE_DIR}${encodeURIComponent(cardImage)}` : undefined;
+            
+            return (
+              <FancyCard 
+                key={i} 
+                card={displayCard} 
+                revealed={opened} 
+                customImageUrl={imageUrl}
+              />
+            );
+          })}
         </div>
 
         {/* Action Button */}

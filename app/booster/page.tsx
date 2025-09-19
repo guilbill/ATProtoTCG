@@ -4,10 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FancyCard } from '../components/FancyCard';
 
-const IMAGE_DIR = '/MAGIC%20React%20Admin/';
-
 export default function BoosterPage() {
-  const [cards, setCards] = useState<string[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<{ did: string; handle: string; } | null>(null);
+  const [cards, setCards] = useState<any[]>([]);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [opened, setOpened] = useState(false);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
@@ -30,6 +31,14 @@ export default function BoosterPage() {
 
   // Check auth on mount
   useEffect(() => {
+    // Get session ID from cookie
+    const getSessionId = () => {
+      const cookies = document.cookie.split(';');
+      const sessionCookie = cookies.find(c => c.trim().startsWith('atp_session='));
+      return sessionCookie ? sessionCookie.split('=')[1].trim() : null;
+    };
+    
+    setSessionId(getSessionId());
     checkAuth();
     generateBoosterCards();
   }, []);
@@ -53,19 +62,6 @@ export default function BoosterPage() {
   };
 
   // helper: convert image URL to base64 (no data: prefix)
-  async function fetchImageAsBase64(url: string) {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Failed to fetch image ' + url);
-    const buffer = await res.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-    const chunk = 0x8000;
-    let binary = '';
-    for (let i = 0; i < bytes.length; i += chunk) {
-      binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)) as any);
-    }
-    return btoa(binary);
-  }
-
   function randomStat() {
     return Math.floor(Math.random() * 10) + 1; // 1..10
   }
@@ -85,8 +81,6 @@ export default function BoosterPage() {
     try {
       let savedCount = 0;
       for (const cardImage of cards) {
-        const imageUrl = `${IMAGE_DIR}${encodeURIComponent(cardImage)}`;
-        const imageBase64 = await fetchImageAsBase64(imageUrl);
         const name = cardImage.replace(/\.JPEG$/i, '').replace(/_/g, ' ');
         const cardPayload = {
           name,
@@ -94,7 +88,6 @@ export default function BoosterPage() {
           defense: randomStat(),
           type: 'magic',
           rarity: randomRarity(),
-          imageBase64,
         };
 
         const res = await fetch('/api/create-card', {
@@ -191,14 +184,11 @@ export default function BoosterPage() {
               rarity: (['common', 'rare', 'epic', 'legendary'] as const)[Math.floor(Math.random() * 4)]
             };
             
-            const imageUrl = opened ? `${IMAGE_DIR}${encodeURIComponent(cardImage)}` : undefined;
-            
             return (
               <FancyCard 
                 key={i} 
                 card={displayCard} 
-                revealed={opened} 
-                customImageUrl={imageUrl}
+                revealed={opened}
               />
             );
           })}

@@ -20,15 +20,18 @@ export async function POST(req: NextRequest) {
 
   // Create a session id for client cookie
   const sid = createSessionId();
+  console.log('Login API - Created session ID:', sid);
 
   // Create an AtpAgent that will persist session data via persistSession callback
   let savedSessionData: any = undefined;
   const agent = new AtpAgent({
     service: 'https://bsky.social',
     persistSession: (evt, sess) => {
+      console.log('Login API - persistSession callback called:', evt, !!sess);
       // persistSession is called on login/resume; save the session data in-memory
       if (evt === 'create' || evt === 'update') {
         if (sess) {
+          console.log('Login API - Storing session data');
           savedSessionData = sess;
           storeSession(sid, sess);
         }
@@ -37,7 +40,9 @@ export async function POST(req: NextRequest) {
   });
 
   try {
+    console.log('Login API - Attempting login');
     await agent.login({ identifier, password });
+    console.log('Login API - Login successful, session data:', !!savedSessionData);
     // store agent in agent cache for quick reuse
     storeAgent(sid, agent);
   } catch (err) {

@@ -3,6 +3,71 @@ import { AtpAgent } from '@atproto/api';
 import { getSession, getAgent, storeAgent } from '../../lib/sessionStore';
 
 export async function POST(req: NextRequest) {
+  return handleCardRequest(req);
+}
+
+export async function GET(req: NextRequest) {
+  return handleCardRequest(req);
+}
+
+export async function DELETE(req: NextRequest) {
+  return handleDeleteAllCards(req);
+}
+
+async function handleDeleteAllCards(req: NextRequest) {
+  try {
+    let agent: AtpAgent | undefined;
+    const sid = req.cookies.get('atp_session')?.value;
+    
+    if (sid) agent = getAgent(sid);
+    
+    // If no cached agent, but we have stored session data, resume it
+    if (!agent && sid) {
+      const sess = getSession(sid);
+      if (sess) {
+        agent = new AtpAgent({ service: 'https://bsky.social' });
+        await agent.resumeSession(sess);
+        storeAgent(sid, agent);
+      }
+    }
+    
+    if (!agent) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+    
+    const did = agent.session?.did;
+    if (!did) throw new Error('No DID after authentication');
+    
+    // Get all cards first
+    const res = await agent.com.atproto.repo.listRecords({
+      repo: did,
+      collection: 'app.tcg.card',
+    });
+    
+    // Delete each card record
+    let deletedCount = 0;
+    if (Array.isArray(res.data.records)) {
+      for (const record of res.data.records) {
+        await agent.com.atproto.repo.deleteRecord({
+          repo: did,
+          collection: 'app.tcg.card',
+          rkey: record.uri.split('/').pop()! // Extract rkey from URI
+        });
+        deletedCount++;
+      }
+    }
+    
+    return NextResponse.json({ 
+      success: true, 
+      message: `Deleted ${deletedCount} cards` 
+    });
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : 'Failed to delete cards';
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
+  }
+}
+
+async function handleCardRequest(req: NextRequest) {
   let body: unknown = {};
   try {
     body = await req.json();
@@ -16,7 +81,9 @@ export async function POST(req: NextRequest) {
   try {
     let agent: AtpAgent | undefined;
     const sid = req.cookies.get('atp_session')?.value;
+    
     if (sid) agent = getAgent(sid);
+    
     // If no cached agent, but we have stored session data, resume it
     if (!agent && sid) {
       const sess = getSession(sid);
@@ -29,7 +96,9 @@ export async function POST(req: NextRequest) {
     // If still no agent, try to login with provided credentials
     if (!agent) {
       if (!identifier || !password) {
-        return NextResponse.json({ error: 'Missing credentials or session' }, { status: 400 });
+        // If we have a session cookie but no valid session data, the session has expired
+        // Return 401 instead of 400 to indicate authentication issue
+        return NextResponse.json({ error: 'Session expired, please login again' }, { status: 401 });
       }
       agent = new AtpAgent({ service: 'https://bsky.social' });
       await agent.login({ identifier, password });
@@ -48,7 +117,6 @@ export async function POST(req: NextRequest) {
     defense: number;
     type: string;
     rarity: string;
-    imageCid?: string;
     createdAt?: string;
   }
 
@@ -75,8 +143,7 @@ export async function POST(req: NextRequest) {
           defense: card.defense,
           type: card.type,
           rarity: card.rarity,
-          imageCid: card.imageCid, // Explicitly preserve imageCid
-          createdAt: card.createdAt // Explicitly preserve createdAt
+          createdAt: card.createdAt
         }))
     : [];
     return NextResponse.json({ cards });

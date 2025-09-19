@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useRef } from 'react';
-import Image from 'next/image';
 
 interface Card {
   name: string;
@@ -8,24 +7,17 @@ interface Card {
   defense: number;
   type: string;
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
-  imageCid?: string;
   createdAt?: string;
 }
 
 interface FancyCardProps {
   card: Card;
   revealed?: boolean;
-  customImageUrl?: string;
 }
 
-const DEFAULT_CARD_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 280'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23764ba2;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='200' height='280' fill='url(%23grad)' rx='12'/%3E%3Ctext x='100' y='140' text-anchor='middle' fill='white' font-family='Arial' font-size='24' font-weight='bold'%3E%3F%3C/text%3E%3C/svg%3E";
-
-export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true, customImageUrl }) => {
+export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true }) => {
   const [isHovered, setIsHovered] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-
-  // Create unique random seed for each card instance
-  const randomSeed = Math.random();
 
   const rarityColors = {
     common: { primary: '#6b7280', secondary: '#9ca3af', accent: '#d1d5db' },
@@ -35,12 +27,7 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true, cus
   };
 
   const colors = rarityColors[card.rarity];
-  const cardImage = customImageUrl || 
-    (card.imageCid 
-      ? `/api/blob?cid=${encodeURIComponent(card.imageCid)}`
-      : DEFAULT_CARD_IMAGE);
 
-  // Simplified mouse interaction handler
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
     
@@ -48,111 +35,78 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true, cus
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     
-    const rotateX = (y - 50) / 3;
-    const rotateY = -(x - 50) / 3;
+    const rotateX = (y - 50) * 0.1;
+    const rotateY = (50 - x) * 0.1;
     
-    cardRef.current.style.setProperty('--mouse-x', `${x}%`);
-    cardRef.current.style.setProperty('--mouse-y', `${y}%`);
-    cardRef.current.style.setProperty('--rotate-x', `${rotateX}deg`);
-    cardRef.current.style.setProperty('--rotate-y', `${rotateY}deg`);
+    cardRef.current.style.transform = `
+      perspective(1000px) 
+      rotateX(${rotateX}deg) 
+      rotateY(${rotateY}deg) 
+      scale3d(1.02, 1.02, 1.02)
+    `;
   };
 
   const handleMouseLeave = () => {
     if (!cardRef.current) return;
-    
-    cardRef.current.style.setProperty('--mouse-x', '50%');
-    cardRef.current.style.setProperty('--mouse-y', '50%');
-    cardRef.current.style.setProperty('--rotate-x', '0deg');
-    cardRef.current.style.setProperty('--rotate-y', '0deg');
+    cardRef.current.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
   };
 
   if (!revealed) {
     return (
-      <div className="card-wrapper">
-        <div className="card mystery-card">
-          <div className="card-back">
-            <div className="mystery-pattern"></div>
-            <div className="mystery-text">?</div>
-          </div>
+      <div 
+        ref={cardRef}
+        className="card-container card-back"
+        style={{
+          width: '280px',
+          height: '400px',
+          margin: '1rem',
+          perspective: '1000px',
+          transition: 'all 0.3s ease'
+        }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        onMouseEnter={() => setIsHovered(true)}
+      >
+        <div className="card-inner" style={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          borderRadius: '15px',
+          background: `linear-gradient(135deg, #2d3748, #4a5568)`,
+          boxShadow: isHovered 
+            ? '0 25px 50px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1)' 
+            : '0 15px 35px rgba(0,0,0,0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          fontSize: '2rem',
+          fontWeight: 'bold',
+          textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
+        }}>
+          ?
         </div>
-        <style jsx>{`
-          .card-wrapper {
-            perspective: 1000px;
-            width: 200px;
-            height: 280px;
-          }
-          
-          .card {
-            width: 100%;
-            height: 100%;
-            border-radius: 12px;
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform 0.3s ease;
-            cursor: pointer;
-          }
-          
-          .mystery-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: 2px solid #4c1d95;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-          }
-          
-          .card-back {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-          }
-          
-          .mystery-pattern {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-              radial-gradient(circle at 25% 25%, rgba(255,255,255,0.2) 2px, transparent 2px),
-              radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 1px, transparent 1px);
-            background-size: 20px 20px;
-            animation: shimmer 3s ease-in-out infinite;
-          }
-          
-          .mystery-text {
-            font-size: 48px;
-            font-weight: bold;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            z-index: 1;
-          }
-          
-          @keyframes shimmer {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 0.7; }
-          }
-        `}</style>
       </div>
     );
   }
 
   return (
     <div 
-      className="card-wrapper"
       ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        handleMouseLeave();
+      className="card-container"
+      style={{
+        width: '280px',
+        height: '400px',
+        margin: '1rem',
+        perspective: '1000px',
+        transition: 'all 0.3s ease'
       }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
       onMouseEnter={() => setIsHovered(true)}
     >
-      <div className={`card fancy-card ${isHovered ? 'hovered' : ''}`}>
-        <div className="card-inner">
-          <div className="card-shine"></div>
-          <div className="holographic-layer"></div>
+      <div className="card-inner">
+        <div className="card-face card-front">
           <div className="card-content">
             <div className="card-header">
               <h3 className="card-name">{card.name}</h3>
@@ -160,16 +114,23 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true, cus
             </div>
             
             <div className="card-image-container">
-              <Image 
-                src={cardImage}
-                alt={card.name}
-                className="card-image"
-                fill
-                style={{ objectFit: 'cover' }}
-                onError={(e) => {
-                  e.currentTarget.src = DEFAULT_CARD_IMAGE;
+              <div 
+                className="card-visual"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '3rem',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
                 }}
-              />
+              >
+                {card.name.charAt(0).toUpperCase()}
+              </div>
               <div className="image-overlay"></div>
             </div>
             
@@ -190,136 +151,70 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true, cus
           </div>
         </div>
       </div>
-      
+
       <style jsx>{`
-        .card-wrapper {
-          perspective: 1000px;
-          width: 200px;
-          height: 280px;
-          --mouse-x: 50%;
-          --mouse-y: 50%;
-          --rotate-x: 0deg;
-          --rotate-y: 0deg;
-        }
-        
-        .fancy-card {
-          width: 100%;
-          height: 100%;
-          border-radius: 12px;
-          position: relative;
-          cursor: pointer;
-          background: linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 50%, ${colors.accent} 100%);
-          border: 2px solid ${colors.primary};
-          box-shadow: 
-            0 4px 15px rgba(0,0,0,0.2),
-            0 0 20px rgba(${colors.primary === '#f59e0b' ? '245, 158, 11' : 
-                              colors.primary === '#8b5cf6' ? '139, 92, 246' :
-                              colors.primary === '#3b82f6' ? '59, 130, 246' : '107, 114, 128'}, 0.3);
-          transform: 
-            rotateY(var(--rotate-y))
-            rotateX(var(--rotate-x));
-          transition: box-shadow 0.3s ease, transform 0.1s ease;
+        .card-container {
           transform-style: preserve-3d;
-        }
-        
-        .fancy-card.hovered {
-          box-shadow: 
-            0 15px 35px rgba(0,0,0,0.3),
-            0 0 30px rgba(${colors.primary === '#f59e0b' ? '245, 158, 11' : 
-                              colors.primary === '#8b5cf6' ? '139, 92, 246' :
-                              colors.primary === '#3b82f6' ? '59, 130, 246' : '107, 114, 128'}, 0.5);
+          cursor: pointer;
+          user-select: none;
         }
         
         .card-inner {
+          position: relative;
           width: 100%;
           height: 100%;
-          border-radius: 10px;
+          transition: transform 0.1s ease-out;
+          transform-style: preserve-3d;
+        }
+        
+        .card-face {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          backface-visibility: hidden;
+          border-radius: 15px;
           overflow: hidden;
-          position: relative;
-          background: linear-gradient(135deg, 
-            rgba(255,255,255,0.1) 0%, 
-            rgba(255,255,255,0.05) 50%, 
-            rgba(0,0,0,0.1) 100%);
         }
         
-        .card-shine {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: 
-            linear-gradient(
-              115deg,
-              transparent 25%,
-              rgba(255, 255, 255, 0.6) var(--mouse-x),
-              transparent 75%
-            );
-          mix-blend-mode: overlay;
-          opacity: ${isHovered ? 0.8 : 0};
-          transition: opacity 0.3s ease;
-          pointer-events: none;
-        }
-        
-        .holographic-layer {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: 
-            radial-gradient(circle at var(--mouse-x) var(--mouse-y), 
-              rgba(255,255,255,0.3) 0%, 
-              rgba(255,255,255,0.1) 30%, 
-              transparent 60%),
-            linear-gradient(
-              calc(var(--mouse-x) * 3.6 + ${randomSeed * 360}deg),
-              #ff006e,
-              #8338ec,
-              #3a86ff,
-              #06ffa5,
-              #ffbe0b,
-              #ff006e
-            );
-          background-size: 100% 100%, 200% 200%;
-          opacity: ${isHovered ? 0.6 : 0.3};
-          transition: opacity 0.3s ease;
-          animation: holo-shift 4s ease-in-out infinite;
-          mix-blend-mode: overlay;
-          pointer-events: none;
+        .card-front {
+          background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary});
+          border: 2px solid ${colors.accent};
+          box-shadow: ${isHovered 
+            ? '0 25px 50px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1)' 
+            : '0 15px 35px rgba(0,0,0,0.2)'};
         }
         
         .card-content {
-          position: relative;
-          z-index: 2;
-          padding: 12px;
           height: 100%;
           display: flex;
           flex-direction: column;
-          color: white;
+          position: relative;
+          z-index: 2;
         }
         
         .card-header {
+          padding: 1rem 1rem 0.5rem;
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          margin-bottom: 8px;
         }
         
         .card-name {
-          font-size: 14px;
+          color: white;
+          font-size: 1.25rem;
           font-weight: bold;
           margin: 0;
-          text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
-          line-height: 1.2;
-          max-width: 120px;
+          text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+          flex-grow: 1;
+          margin-right: 0.5rem;
         }
         
         .rarity-badge {
-          background: rgba(0,0,0,0.6);
-          padding: 2px 6px;
-          border-radius: 8px;
-          font-size: 10px;
+          background: rgba(255,255,255,0.2);
+          color: white;
+          padding: 0.25rem 0.5rem;
+          border-radius: 12px;
+          font-size: 0.75rem;
           font-weight: bold;
           text-transform: uppercase;
           letter-spacing: 0.5px;
@@ -327,19 +222,12 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true, cus
         }
         
         .card-image-container {
-          flex: 1;
-          position: relative;
-          margin: 8px 0;
-          border-radius: 6px;
+          flex-grow: 1;
+          margin: 0 1rem;
+          border-radius: 10px;
           overflow: hidden;
-          background: rgba(0,0,0,0.2);
-        }
-        
-        .card-image {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          display: block;
+          position: relative;
+          background: rgba(255,255,255,0.1);
         }
         
         .image-overlay {
@@ -348,27 +236,26 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true, cus
           left: 0;
           right: 0;
           bottom: 0;
-          background: linear-gradient(135deg, 
-            rgba(255,255,255,0.1) 0%, 
-            transparent 30%, 
-            transparent 70%, 
-            rgba(0,0,0,0.1) 100%);
+          background: linear-gradient(
+            45deg,
+            rgba(255,255,255,0.1) 0%,
+            transparent 50%,
+            rgba(255,255,255,0.1) 100%
+          );
           pointer-events: none;
         }
         
         .card-stats {
-          background: rgba(0,0,0,0.4);
-          border-radius: 6px;
-          padding: 8px;
-          backdrop-filter: blur(5px);
-          border: 1px solid rgba(255,255,255,0.2);
+          padding: 1rem;
+          background: rgba(0,0,0,0.2);
+          backdrop-filter: blur(10px);
         }
         
         .stat-row {
           display: flex;
           justify-content: space-between;
-          margin-bottom: 4px;
-          font-size: 12px;
+          align-items: center;
+          margin-bottom: 0.5rem;
         }
         
         .stat-row:last-child {
@@ -376,27 +263,26 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true, cus
         }
         
         .stat-label {
-          font-weight: 600;
-          opacity: 0.9;
+          color: rgba(255,255,255,0.8);
+          font-size: 0.875rem;
+          font-weight: 500;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
         
         .stat-value {
+          color: white;
+          font-size: 1.125rem;
           font-weight: bold;
+          text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
         }
         
         .stat-value.attack {
-          color: #ff6b6b;
+          color: #fbbf24;
         }
         
         .stat-value.defense {
-          color: #4ecdc4;
-        }
-        
-        @keyframes holo-shift {
-          0%, 100% { background-position: 0% 0%, 0% 0%; }
-          25% { background-position: 0% 0%, 100% 0%; }
-          50% { background-position: 0% 0%, 100% 100%; }
-          75% { background-position: 0% 0%, 0% 100%; }
+          color: #60a5fa;
         }
       `}</style>
     </div>

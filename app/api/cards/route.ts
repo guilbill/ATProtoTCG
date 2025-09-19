@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     // empty or invalid JSON body — continue with session lookup
     body = {};
   }
-  let { identifier, password } = (body as { identifier?: string; password?: string }) || {};
+  const { identifier, password } = (body as { identifier?: string; password?: string }) || {};
 
   // Try to resume session from stored AtpSessionData, or reuse cached agent
   try {

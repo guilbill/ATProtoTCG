@@ -41,13 +41,14 @@ export async function POST(req: NextRequest) {
       repo: did,
       collection: 'app.tcg.card',
     });
+
   interface Card {
     name: string;
     attack: number;
     defense: number;
     type: string;
-  rarity: string;
-  imageCid?: string;
+    rarity: string;
+    imageCid?: string;
     createdAt?: string;
   }
 
@@ -60,11 +61,23 @@ export async function POST(req: NextRequest) {
       typeof v.defense === 'number' &&
       typeof v.type === 'string' &&
       typeof v.rarity === 'string'
+      // imageCid and createdAt are optional, so we don't validate them
     );
   }
 
   const cards = Array.isArray(res.data.records)
-    ? res.data.records.map((r) => r.value).filter(isCard)
+    ? res.data.records
+        .map((r) => r.value)
+        .filter(isCard)
+        .map((card) => ({
+          name: card.name,
+          attack: card.attack,
+          defense: card.defense,
+          type: card.type,
+          rarity: card.rarity,
+          imageCid: card.imageCid, // Explicitly preserve imageCid
+          createdAt: card.createdAt // Explicitly preserve createdAt
+        }))
     : [];
     return NextResponse.json({ cards });
   } catch (err) {

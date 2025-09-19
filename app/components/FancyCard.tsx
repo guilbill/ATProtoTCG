@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import Image from 'next/image';
 
 interface Card {
   name: string;
@@ -21,6 +22,10 @@ const DEFAULT_CARD_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2
 
 export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true, customImageUrl }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // Create unique random seed for each card instance
+  const randomSeed = Math.random();
 
   const rarityColors = {
     common: { primary: '#6b7280', secondary: '#9ca3af', accent: '#d1d5db' },
@@ -34,6 +39,32 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true, cus
     (card.imageCid 
       ? `/api/blob?cid=${encodeURIComponent(card.imageCid)}`
       : DEFAULT_CARD_IMAGE);
+
+  // Simplified mouse interaction handler
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    
+    const rotateX = (y - 50) / 3;
+    const rotateY = -(x - 50) / 3;
+    
+    cardRef.current.style.setProperty('--mouse-x', `${x}%`);
+    cardRef.current.style.setProperty('--mouse-y', `${y}%`);
+    cardRef.current.style.setProperty('--rotate-x', `${rotateX}deg`);
+    cardRef.current.style.setProperty('--rotate-y', `${rotateY}deg`);
+  };
+
+  const handleMouseLeave = () => {
+    if (!cardRef.current) return;
+    
+    cardRef.current.style.setProperty('--mouse-x', '50%');
+    cardRef.current.style.setProperty('--mouse-y', '50%');
+    cardRef.current.style.setProperty('--rotate-x', '0deg');
+    cardRef.current.style.setProperty('--rotate-y', '0deg');
+  };
 
   if (!revealed) {
     return (
@@ -108,13 +139,19 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true, cus
   }
 
   return (
-    <div className="card-wrapper">
-      <div 
-        className={`card fancy-card ${isHovered ? 'hovered' : ''}`}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
+    <div 
+      className="card-wrapper"
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        handleMouseLeave();
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+    >
+      <div className={`card fancy-card ${isHovered ? 'hovered' : ''}`}>
         <div className="card-inner">
+          <div className="card-shine"></div>
           <div className="holographic-layer"></div>
           <div className="card-content">
             <div className="card-header">
@@ -123,12 +160,14 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true, cus
             </div>
             
             <div className="card-image-container">
-              <img 
+              <Image 
                 src={cardImage}
                 alt={card.name}
                 className="card-image"
+                fill
+                style={{ objectFit: 'cover' }}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = DEFAULT_CARD_IMAGE;
+                  e.currentTarget.src = DEFAULT_CARD_IMAGE;
                 }}
               />
               <div className="image-overlay"></div>
@@ -157,6 +196,10 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true, cus
           perspective: 1000px;
           width: 200px;
           height: 280px;
+          --mouse-x: 50%;
+          --mouse-y: 50%;
+          --rotate-x: 0deg;
+          --rotate-y: 0deg;
         }
         
         .fancy-card {
@@ -164,8 +207,6 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true, cus
           height: 100%;
           border-radius: 12px;
           position: relative;
-          transform-style: preserve-3d;
-          transition: all 0.3s ease;
           cursor: pointer;
           background: linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 50%, ${colors.accent} 100%);
           border: 2px solid ${colors.primary};
@@ -174,10 +215,14 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true, cus
             0 0 20px rgba(${colors.primary === '#f59e0b' ? '245, 158, 11' : 
                               colors.primary === '#8b5cf6' ? '139, 92, 246' :
                               colors.primary === '#3b82f6' ? '59, 130, 246' : '107, 114, 128'}, 0.3);
+          transform: 
+            rotateY(var(--rotate-y))
+            rotateX(var(--rotate-x));
+          transition: box-shadow 0.3s ease, transform 0.1s ease;
+          transform-style: preserve-3d;
         }
         
         .fancy-card.hovered {
-          transform: rotateY(5deg) rotateX(5deg) translateY(-5px);
           box-shadow: 
             0 15px 35px rgba(0,0,0,0.3),
             0 0 30px rgba(${colors.primary === '#f59e0b' ? '245, 158, 11' : 
@@ -197,6 +242,25 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true, cus
             rgba(0,0,0,0.1) 100%);
         }
         
+        .card-shine {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: 
+            linear-gradient(
+              115deg,
+              transparent 25%,
+              rgba(255, 255, 255, 0.6) var(--mouse-x),
+              transparent 75%
+            );
+          mix-blend-mode: overlay;
+          opacity: ${isHovered ? 0.8 : 0};
+          transition: opacity 0.3s ease;
+          pointer-events: none;
+        }
+        
         .holographic-layer {
           position: absolute;
           top: 0;
@@ -204,13 +268,25 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true, cus
           right: 0;
           bottom: 0;
           background: 
-            linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%),
-            radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2) 0%, transparent 50%),
-            radial-gradient(circle at 70% 70%, rgba(0,255,255,0.1) 0%, transparent 50%);
-          opacity: ${isHovered ? '0.8' : '0.4'};
+            radial-gradient(circle at var(--mouse-x) var(--mouse-y), 
+              rgba(255,255,255,0.3) 0%, 
+              rgba(255,255,255,0.1) 30%, 
+              transparent 60%),
+            linear-gradient(
+              calc(var(--mouse-x) * 3.6 + ${randomSeed * 360}deg),
+              #ff006e,
+              #8338ec,
+              #3a86ff,
+              #06ffa5,
+              #ffbe0b,
+              #ff006e
+            );
+          background-size: 100% 100%, 200% 200%;
+          opacity: ${isHovered ? 0.6 : 0.3};
           transition: opacity 0.3s ease;
-          animation: holo-shift 3s ease-in-out infinite;
+          animation: holo-shift 4s ease-in-out infinite;
           mix-blend-mode: overlay;
+          pointer-events: none;
         }
         
         .card-content {
@@ -317,18 +393,10 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true, cus
         }
         
         @keyframes holo-shift {
-          0%, 100% {
-            background-position: 0% 0%, 30% 30%, 70% 70%;
-          }
-          25% {
-            background-position: 100% 0%, 40% 20%, 60% 80%;
-          }
-          50% {
-            background-position: 100% 100%, 20% 40%, 80% 60%;
-          }
-          75% {
-            background-position: 0% 100%, 10% 50%, 90% 50%;
-          }
+          0%, 100% { background-position: 0% 0%, 0% 0%; }
+          25% { background-position: 0% 0%, 100% 0%; }
+          50% { background-position: 0% 0%, 100% 100%; }
+          75% { background-position: 0% 0%, 0% 100%; }
         }
       `}</style>
     </div>

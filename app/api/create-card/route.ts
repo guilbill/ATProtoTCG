@@ -6,7 +6,7 @@ import { getSession, getAgent, storeAgent } from '../../lib/sessionStore';
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  let { identifier, password, card } = body as {
+  const { identifier, password, card } = body as {
     identifier?: string;
     password?: string;
     card?: {

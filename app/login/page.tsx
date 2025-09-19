@@ -29,11 +29,26 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     
+    // Process identifier to add .bsky.social if needed
+    let processedIdentifier = identifier.trim();
+    
+    // If identifier doesn't contain a dot (simple username) or is missing .bsky.social, add it
+    if (!processedIdentifier.includes('.')) {
+      processedIdentifier = `${processedIdentifier}.bsky.social`;
+    } else if (!processedIdentifier.endsWith('.bsky.social') && !processedIdentifier.includes('@')) {
+      // Handle case where user entered something like "guilbill.bsky" but not the full domain
+      if (processedIdentifier.endsWith('.bsky')) {
+        processedIdentifier = `${processedIdentifier}.social`;
+      } else if (!processedIdentifier.includes('.bsky.social')) {
+        processedIdentifier = `${processedIdentifier}.bsky.social`;
+      }
+    }
+    
     try {
       const loginRes = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password }),
+        body: JSON.stringify({ identifier: processedIdentifier, password }),
         credentials: 'same-origin',
       });
       
@@ -78,7 +93,7 @@ export default function LoginPage() {
             </label>
             <input
               type="text"
-              placeholder="your.handle.bsky.social"
+              placeholder="username (or full handle)"
               value={identifier}
               onChange={e => setIdentifier(e.target.value)}
               style={{ 
@@ -91,6 +106,9 @@ export default function LoginPage() {
               }}
               required
             />
+            <small style={{ color: '#666', fontSize: '12px', marginTop: '0.25rem', display: 'block' }}>
+              Just enter your username - we&apos;ll add .bsky.social automatically
+            </small>
           </div>
           
           <div style={{ marginBottom: '1.5rem' }}>

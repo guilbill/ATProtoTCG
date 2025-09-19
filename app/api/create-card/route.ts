@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AtpAgent } from '@atproto/api';
-import { getCreds, getAgent, storeAgent } from '../../lib/sessionStore';
+import { getSession, getAgent, storeAgent } from '../../lib/sessionStore';
 
 // Node buffer is available in the Next.js server runtime
 
@@ -19,20 +19,9 @@ export async function POST(req: NextRequest) {
     };
   };
 
-  // If no credentials provided, try session cookie
-  if (!identifier || !password) {
-    const sid = req.cookies.get('atp_session')?.value;
-    if (sid) {
-      const creds = getCreds(sid);
-      if (creds) {
-        identifier = creds.identifier;
-        password = creds.password;
-      }
-    }
-  }
-
-  if (!identifier || !password || !card) {
-    return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
+  // If no credentials provided, try session cookie and resume stored session
+  if (!card) {
+    return NextResponse.json({ error: 'Missing card data' }, { status: 400 });
   }
 
   try {
@@ -40,7 +29,20 @@ export async function POST(req: NextRequest) {
     let agent: AtpAgent | undefined;
     const sid = req.cookies.get('atp_session')?.value;
     if (sid) agent = getAgent(sid);
+    // If no cached agent, try to restore session data
+    if (!agent && sid) {
+      const sess = getSession(sid);
+      if (sess) {
+        agent = new AtpAgent({ service: 'https://bsky.social' });
+        await agent.resumeSession(sess);
+        storeAgent(sid, agent);
+      }
+    }
+    // If still no agent, fallback to credentials in body
     if (!agent) {
+      if (!identifier || !password) {
+        return NextResponse.json({ error: 'Missing credentials or session' }, { status: 400 });
+      }
       agent = new AtpAgent({ service: 'https://bsky.social' });
       await agent.login({ identifier, password });
       if (sid) storeAgent(sid, agent);

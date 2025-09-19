@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AtpAgent } from '@atproto/api';
-import { getCreds, getAgent, storeAgent } from '../../lib/sessionStore';
+import { getSession, getAgent, storeAgent } from '../../lib/sessionStore';
 
 export async function POST(req: NextRequest) {
   let body: unknown = {};
@@ -12,27 +12,25 @@ export async function POST(req: NextRequest) {
   }
   let { identifier, password } = (body as { identifier?: string; password?: string }) || {};
 
-  // Try session cookie if no credentials in body
-  if (!identifier || !password) {
-    const sid = req.cookies.get('atp_session')?.value;
-    if (sid) {
-      const creds = getCreds(sid);
-      if (creds) {
-        identifier = creds.identifier;
-        password = creds.password;
-      }
-    }
-  }
-
-  if (!identifier || !password) {
-    return NextResponse.json({ error: 'Missing credentials' }, { status: 400 });
-  }
-
+  // Try to resume session from stored AtpSessionData, or reuse cached agent
   try {
     let agent: AtpAgent | undefined;
     const sid = req.cookies.get('atp_session')?.value;
     if (sid) agent = getAgent(sid);
+    // If no cached agent, but we have stored session data, resume it
+    if (!agent && sid) {
+      const sess = getSession(sid);
+      if (sess) {
+        agent = new AtpAgent({ service: 'https://bsky.social' });
+        await agent.resumeSession(sess);
+        storeAgent(sid, agent);
+      }
+    }
+    // If still no agent, try to login with provided credentials
     if (!agent) {
+      if (!identifier || !password) {
+        return NextResponse.json({ error: 'Missing credentials or session' }, { status: 400 });
+      }
       agent = new AtpAgent({ service: 'https://bsky.social' });
       await agent.login({ identifier, password });
       if (sid) storeAgent(sid, agent);

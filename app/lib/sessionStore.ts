@@ -1,9 +1,8 @@
-import { AtpAgent } from '@atproto/api';
-
-type Creds = { identifier: string; password: string };
+import type { AtpAgent, AtpSessionData } from '@atproto/api';
 
 // In-memory session store. Suitable for development/hackday.
-export const sessions = new Map<string, Creds>();
+// sessions -> stores AtpSessionData produced by the SDK's persistSession callback
+export const sessions = new Map<string, AtpSessionData>();
 export const agents = new Map<string, AtpAgent>();
 
 export function createSessionId(): string {
@@ -14,11 +13,11 @@ export function createSessionId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
-export function storeCreds(sessionId: string, creds: Creds) {
-  sessions.set(sessionId, creds);
+export function storeSession(sessionId: string, sess: AtpSessionData) {
+  sessions.set(sessionId, sess);
 }
 
-export function getCreds(sessionId: string) {
+export function getSession(sessionId: string) {
   return sessions.get(sessionId);
 }
 

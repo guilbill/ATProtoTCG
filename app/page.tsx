@@ -137,6 +137,19 @@ export default function Home() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <span style={{ color: '#666' }}>Welcome, {identifier}</span>
           <button 
+            onClick={() => router.push('/profile')}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            View Profile
+          </button>
+          <button 
             onClick={handleLogout}
             style={{
               padding: '0.5rem 1rem',

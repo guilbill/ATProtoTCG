@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   console.log('Login API - Created session ID:', sid);
 
   // Create an AtpAgent that will persist session data via persistSession callback
-  let savedSessionData: any = undefined;
+  let savedSessionData: import('@atproto/api').AtpSessionData | undefined = undefined;
   const agent = new AtpAgent({
     service: 'https://bsky.social',
     persistSession: (evt, sess) => {

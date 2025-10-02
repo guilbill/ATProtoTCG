@@ -1,20 +1,27 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { FancyCard } from '../components/FancyCard';
 
+export type Card = {
+  name: string;
+  attack: number;
+  defense: number;
+  type: string;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  createdAt?: string;
+  image: string;
+};
+
 export default function BoosterPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<{ did: string; handle: string; } | null>(null);
-  const [cards, setCards] = useState<any[]>([]);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [cards, setCards] = useState<Card[]>([]);
   const [opened, setOpened] = useState(false);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const router = useRouter();
   
-  const images = [
+  const images = useMemo(() => [
     'ADRIEN.JPEG',
     'ANNIVERSARY.JPEG', 
     'ANY.JPEG',
@@ -27,67 +34,47 @@ export default function BoosterPage() {
     'JEREMIE.JPEG',
     'MUI.JPEG',
     'PROFESSIONALSERVICES.JPEG',
-  ];
-
-  // Check auth on mount
-  useEffect(() => {
-    // Get session ID from cookie
-    const getSessionId = () => {
-      const cookies = document.cookie.split(';');
-      const sessionCookie = cookies.find(c => c.trim().startsWith('atp_session='));
-      return sessionCookie ? sessionCookie.split('=')[1].trim() : null;
-    };
-    
-    setSessionId(getSessionId());
-    checkAuth();
-    generateBoosterCards();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const res = await fetch('/api/session', { credentials: 'same-origin' });
-      const data = await res.json();
-      if (!res.ok || !data.loggedIn) {
-        router.push('/login');
-      }
-    } catch (e) {
-      router.push('/login');
-    }
-  };
-
-  const generateBoosterCards = () => {
-    // Generate 3 distinct random cards
-    const shuffled = [...images].sort(() => Math.random() - 0.5);
-    setCards(shuffled.slice(0, 3));
-  };
+  ], []);
 
   // helper: convert image URL to base64 (no data: prefix)
   function randomStat() {
     return Math.floor(Math.random() * 10) + 1; // 1..10
   }
 
-  function randomRarity() {
-    const list = ['common', 'rare', 'epic', 'legendary'];
+  function randomRarity(): 'common' | 'rare' | 'epic' | 'legendary' {
+    const list = ['common', 'rare', 'epic', 'legendary'] as const;
     return list[Math.floor(Math.random() * list.length)];
   }
 
+  useEffect(() => {
+    // Generate 3 distinct random cards
+    const shuffled = [...images].sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, 3);
+    const newCards: Card[] = selected.map(img => ({
+      name: img.replace(/\.JPEG$/i, '').replace(/_/g, ' '),
+      attack: randomStat(),
+      defense: randomStat(),
+      type: 'magic',
+      rarity: randomRarity(),
+      image: img,
+    }));
+    setCards(newCards);
+  }, [images]);
+
   const openBooster = async () => {
     if (saving) return;
-    
     setOpened(true);
     setSaving(true);
     setStatus('Adding cards to your collection...');
-    
     try {
       let savedCount = 0;
-      for (const cardImage of cards) {
-        const name = cardImage.replace(/\.JPEG$/i, '').replace(/_/g, ' ');
+      for (const card of cards) {
         const cardPayload = {
-          name,
-          attack: randomStat(),
-          defense: randomStat(),
-          type: 'magic',
-          rarity: randomRarity(),
+          name: card.name,
+          attack: card.attack,
+          defense: card.defense,
+          type: card.type,
+          rarity: card.rarity,
         };
 
         const res = await fetch('/api/create-card', {
@@ -108,10 +95,8 @@ export default function BoosterPage() {
         router.push('/');
       }, 1500);
       
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Save failed';
-      setStatus(`Error: ${msg}`);
-      setSaving(false);
+    } catch {
+      router.push('/login');
     }
   };
 
@@ -174,24 +159,12 @@ export default function BoosterPage() {
           marginBottom: '3rem',
           flexWrap: 'wrap'
         }}>
-          {cards.map((cardImage, i) => {
-            // Create a temporary card object for display
-            const displayCard = {
-              name: cardImage.replace(/\.JPEG$/i, '').replace(/_/g, ' '),
-              attack: Math.floor(Math.random() * 10) + 1,
-              defense: Math.floor(Math.random() * 10) + 1,
-              type: 'magic',
-              rarity: (['common', 'rare', 'epic', 'legendary'] as const)[Math.floor(Math.random() * 4)]
-            };
-            
-            return (
-              <FancyCard 
-                key={i} 
-                card={displayCard} 
-                revealed={opened}
-              />
-            );
-          })}
+          {cards.map((card, i) => (
+            <FancyCard
+              key={i}
+              card={card}
+            />
+          ))}
         </div>
 
         {/* Action Button */}

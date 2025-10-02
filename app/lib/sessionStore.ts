@@ -12,8 +12,8 @@ export const sessions = globalThis.__sessions ?? (globalThis.__sessions = new Ma
 export const agents = globalThis.__agents ?? (globalThis.__agents = new Map<string, AtpAgent>());
 
 export function createSessionId(): string {
-  if (typeof crypto !== 'undefined' && typeof (crypto as any).randomUUID === 'function') {
-    return (crypto as any).randomUUID();
+  if (typeof crypto !== 'undefined' && typeof (crypto as Crypto).randomUUID === 'function') {
+    return (crypto as Crypto).randomUUID();
   }
   // fallback
   return Math.random().toString(36).slice(2) + Date.now().toString(36);

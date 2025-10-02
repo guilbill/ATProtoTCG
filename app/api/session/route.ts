@@ -10,7 +10,9 @@ export async function GET(req: NextRequest) {
   console.log('Session API - Session data found:', !!sess);
   if (!sess) return NextResponse.json({ loggedIn: false });
   // sess may contain handle/identifier info under session data structures
-  const identifier = (sess as any).handle || (sess as any).did || undefined;
+  type SessionData = { handle?: string; did?: string };
+  const sessionData = sess as SessionData;
+  const identifier = sessionData.handle || sessionData.did || undefined;
   console.log('Session API - Returning logged in true');
   return NextResponse.json({ loggedIn: true, identifier });
 }

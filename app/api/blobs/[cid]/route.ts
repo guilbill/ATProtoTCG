@@ -3,8 +3,10 @@ import { getSession, getAgent } from '../../../../app/lib/sessionStore';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { cid: string } }
+  context: { params: Promise<{ cid: string }> }
 ) {
+  const { cid } = await context.params;
+
   try {
     // Get session ID from cookies
     const sessionId = request.cookies.get('atp_session')?.value;
@@ -23,11 +25,6 @@ export async function GET(
     const did = sessionData.did;
     if (!did) {
       return NextResponse.json({ error: 'User DID not found' }, { status: 400 });
-    }
-
-    const { cid } = params;
-    if (!cid) {
-      return NextResponse.json({ error: 'CID parameter required' }, { status: 400 });
     }
 
     console.log(`Fetching blob with CID: ${cid} for DID: ${did}`);

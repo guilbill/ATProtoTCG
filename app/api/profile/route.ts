@@ -37,7 +37,14 @@ export async function GET(req: NextRequest) {
       'app.tcg.card', // Our custom collection
     ];
     
-    const allRecords: Record<string, any[]> = {};
+    // Define ATProtoRecord type
+    type ATProtoRecord = {
+      uri: string;
+      cid: string;
+      value: Record<string, unknown>;
+      createdAt: string | null;
+    };
+    const allRecords: Record<string, ATProtoRecord[]> = {};
     
     for (const collection of collections) {
       try {
@@ -52,7 +59,7 @@ export async function GET(req: NextRequest) {
             uri: record.uri,
             cid: record.cid,
             value: record.value,
-            createdAt: record.value?.createdAt || null,
+            createdAt: typeof record.value?.createdAt === 'string' ? record.value.createdAt : null,
           }));
         }
       } catch (error) {

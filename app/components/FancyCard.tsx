@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef } from 'react';
+import './pokemonCardEffect.css';
 
 interface Card {
   name: string;
@@ -30,25 +31,28 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true }) =
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
-    
     const rect = cardRef.current.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
-    
     const rotateX = (y - 50) * 0.1;
     const rotateY = (50 - x) * 0.1;
-    
     cardRef.current.style.transform = `
-      perspective(1000px) 
-      rotateX(${rotateX}deg) 
-      rotateY(${rotateY}deg) 
+      perspective(1000px)
+      rotateX(${rotateX}deg)
+      rotateY(${rotateY}deg)
       scale3d(1.02, 1.02, 1.02)
     `;
+    cardRef.current.style.setProperty('--pointer-x', `${x}%`);
+    cardRef.current.style.setProperty('--pointer-y', `${y}%`);
+    cardRef.current.style.setProperty('--card-opacity', '0.8');
   };
 
   const handleMouseLeave = () => {
     if (!cardRef.current) return;
     cardRef.current.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+    cardRef.current.style.setProperty('--pointer-x', '50%');
+    cardRef.current.style.setProperty('--pointer-y', '50%');
+    cardRef.current.style.setProperty('--card-opacity', '0.6');
   };
 
   if (!revealed) {
@@ -91,16 +95,19 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true }) =
   }
 
   return (
-    <div 
+    <div
       ref={cardRef}
-      className="card-container"
+      className="card-container fancy-card-effect"
       style={{
         width: '280px',
         height: '400px',
         margin: '1rem',
         perspective: '1000px',
-        transition: 'all 0.3s ease'
-      }}
+        transition: 'all 0.3s ease',
+        '--card-primary': colors.primary,
+        '--card-secondary': colors.secondary,
+        '--card-accent': colors.accent,
+      } as React.CSSProperties}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onMouseEnter={() => setIsHovered(true)}
@@ -112,9 +119,8 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true }) =
               <h3 className="card-name">{card.name}</h3>
               <div className="rarity-badge">{card.rarity}</div>
             </div>
-            
             <div className="card-image-container">
-              <div 
+              <div
                 className="card-visual"
                 style={{
                   width: '100%',
@@ -132,8 +138,9 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true }) =
                 {card.name.charAt(0).toUpperCase()}
               </div>
               <div className="image-overlay"></div>
+              <div className="shine"></div>
+              <div className="glare"></div>
             </div>
-            
             <div className="card-stats">
               <div className="stat-row">
                 <span className="stat-label">Type</span>
@@ -151,140 +158,6 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true }) =
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        .card-container {
-          transform-style: preserve-3d;
-          cursor: pointer;
-          user-select: none;
-        }
-        
-        .card-inner {
-          position: relative;
-          width: 100%;
-          height: 100%;
-          transition: transform 0.1s ease-out;
-          transform-style: preserve-3d;
-        }
-        
-        .card-face {
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          backface-visibility: hidden;
-          border-radius: 15px;
-          overflow: hidden;
-        }
-        
-        .card-front {
-          background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary});
-          border: 2px solid ${colors.accent};
-          box-shadow: ${isHovered 
-            ? '0 25px 50px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1)' 
-            : '0 15px 35px rgba(0,0,0,0.2)'};
-        }
-        
-        .card-content {
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          position: relative;
-          z-index: 2;
-        }
-        
-        .card-header {
-          padding: 1rem 1rem 0.5rem;
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-        }
-        
-        .card-name {
-          color: white;
-          font-size: 1.25rem;
-          font-weight: bold;
-          margin: 0;
-          text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-          flex-grow: 1;
-          margin-right: 0.5rem;
-        }
-        
-        .rarity-badge {
-          background: rgba(255,255,255,0.2);
-          color: white;
-          padding: 0.25rem 0.5rem;
-          border-radius: 12px;
-          font-size: 0.75rem;
-          font-weight: bold;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          border: 1px solid rgba(255,255,255,0.3);
-        }
-        
-        .card-image-container {
-          flex-grow: 1;
-          margin: 0 1rem;
-          border-radius: 10px;
-          overflow: hidden;
-          position: relative;
-          background: rgba(255,255,255,0.1);
-        }
-        
-        .image-overlay {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(
-            45deg,
-            rgba(255,255,255,0.1) 0%,
-            transparent 50%,
-            rgba(255,255,255,0.1) 100%
-          );
-          pointer-events: none;
-        }
-        
-        .card-stats {
-          padding: 1rem;
-          background: rgba(0,0,0,0.2);
-          backdrop-filter: blur(10px);
-        }
-        
-        .stat-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 0.5rem;
-        }
-        
-        .stat-row:last-child {
-          margin-bottom: 0;
-        }
-        
-        .stat-label {
-          color: rgba(255,255,255,0.8);
-          font-size: 0.875rem;
-          font-weight: 500;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-        
-        .stat-value {
-          color: white;
-          font-size: 1.125rem;
-          font-weight: bold;
-          text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-        }
-        
-        .stat-value.attack {
-          color: #fbbf24;
-        }
-        
-        .stat-value.defense {
-          color: #60a5fa;
-        }
-      `}</style>
     </div>
   );
 };

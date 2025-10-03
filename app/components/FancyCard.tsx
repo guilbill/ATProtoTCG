@@ -128,35 +128,48 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true }) =
       ref={cardRef}
       className="card-container fancy-card-effect"
       style={{
-        width: '280px',
-        height: '400px',
+        width: '240px', // slightly narrower for better image fit
+        height: '360px', // keep aspect ratio close to image
         margin: '1rem',
         perspective: '1000px',
         transition: 'all 0.3s ease',
         '--card-primary': colors.primary,
         '--card-secondary': colors.secondary,
         '--card-accent': colors.accent,
+        background: getCardBackground(),
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
       } as React.CSSProperties}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onMouseEnter={() => setIsHovered(true)}
     >
-      <div className="card-inner">
-        <div className="card-face card-front">
-          <div className="card-content">
+      <div className="card-inner" style={{position: 'relative', width: '100%', height: '100%'}}>
+        <div className="card-face card-front" style={{width: '100%', height: '100%'}}>
+          {/* Overlays now cover the whole card */}
+          <div className="image-overlay" style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', borderRadius: '15px', pointerEvents: 'none'}}></div>
+          <div className="shine" style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', borderRadius: '15px', pointerEvents: 'none'}}></div>
+          <div className="glare" style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', borderRadius: '15px', pointerEvents: 'none'}}></div>
+          <div className="card-content" style={{
+            position: 'relative',
+            zIndex: 2,
+            background: hasImage() ? 'rgba(255,255,255,0.10)' : 'transparent',
+            borderRadius: '15px',
+            padding: '1rem',
+            color: 'black',
+            textShadow: hasImage() ? '0 1px 4px rgba(0,0,0,0.7)' : 'none',
+          }}>
             <div className="card-header">
               <h3 className="card-name">{card.name}</h3>
               <div className="rarity-badge">{card.rarity}</div>
             </div>
             <div className="card-image-container">
-              <div
-                className="card-visual"
-                style={{
+              {/* Only show fallback letter if no image */}
+              {!hasImage() && (
+                <div className="card-visual" style={{
                   width: '100%',
                   height: '100%',
-                  background: getCardBackground(),
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -164,13 +177,10 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true }) =
                   color: 'white',
                   fontWeight: 'bold',
                   textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
-                }}
-              >
-                {!hasImage() && card.name.charAt(0).toUpperCase()}
-              </div>
-              <div className="image-overlay"></div>
-              <div className="shine"></div>
-              <div className="glare"></div>
+                }}>
+                  {card.name.charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
             <div className="card-stats">
               <div className="stat-row">

@@ -1,3 +1,30 @@
+/* Ensure card-visual background image is visible and fills container */
+.card-visual {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  color: white;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+
+/* Overlay above image, but transparent by default */
+.image-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 15px;
+  background: transparent;
+  z-index: 2;
+  pointer-events: none;
+}
 /* Pokemon Card CSS Holographic Effect - inspired by simeydotme/pokemon-cards-css */
 
 .fancy-card-effect {

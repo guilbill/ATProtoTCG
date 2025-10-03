@@ -77,9 +77,14 @@ export default function AdminPage() {
 
   return (
     <Admin dataProvider={atprotoDataProvider}>
-      {collections.map((col) => (
-        <Resource key={col} name={col} list={ListGuesser} edit={GenericEdit} />
-      ))}
+      {collections.map((col) => {
+        const parts = col.split('.');
+        let displayName = parts[parts.length - 1];
+        displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
+        return (
+          <Resource key={col} name={col} options={{ label: displayName }} list={ListGuesser} edit={GenericEdit} />
+        );
+      })}
     </Admin>
   );
 }

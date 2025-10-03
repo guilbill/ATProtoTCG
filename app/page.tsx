@@ -58,7 +58,6 @@ export default function Home() {
         setLoading(false);
       }
     };
-
     checkAuthAndLoadCards();
   }, [router]);
 
@@ -67,7 +66,6 @@ export default function Home() {
       await fetch('/api/logout', { method: 'POST' });
       router.push('/login');
     } catch {
-      // ignore errors, just redirect
       router.push('/login');
     }
   };
@@ -80,18 +78,15 @@ export default function Home() {
     if (!confirm('Are you sure you want to delete ALL your cards? This cannot be undone.')) {
       return;
     }
-    
     setDeleting(true);
     try {
       const response = await fetch('/api/cards', { 
         method: 'DELETE',
         credentials: 'same-origin' 
       });
-      
       const result = await response.json();
-      
       if (response.ok) {
-        setCards([]); // Clear the cards from the UI
+        setCards([]);
         alert(result.message || 'All cards deleted successfully');
       } else {
         alert(result.error || 'Failed to delete cards');
@@ -118,11 +113,12 @@ export default function Home() {
   }
 
   return (
-    <div style={{ 
+    <div style={{
       minHeight: '100vh',
-      backgroundColor: '#f5f5f5',
-      fontFamily: 'sans-serif',
-      padding: '2rem'
+      background: 'radial-gradient(ellipse at top left, #23272b 60%, #181a1b 100%)',
+      fontFamily: 'serif',
+      padding: '2rem',
+      color: '#ffe8a3',
     }}>
       {/* Header */}
       <div style={{
@@ -130,23 +126,28 @@ export default function Home() {
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: '2rem',
-        backgroundColor: 'white',
+        background: 'linear-gradient(90deg, #181a1b 0%, #23272b 100%)',
         padding: '1rem 2rem',
-        borderRadius: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        borderRadius: '12px',
+        boxShadow: '0 2px 8px #bfa76a',
+        border: '2px solid #bfa76a',
       }}>
-        <h1 style={{ margin: 0, color: '#333' }}>My Collection</h1>
+        <h1 style={{ margin: 0, color: '#ffe8a3', textShadow: '0 2px 8px #000, 0 0 2px #bfa76a' }}>My Collection</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ color: '#666' }}>Welcome, {identifier}</span>
+          <span style={{ color: '#ffe8a3', fontWeight: 600 }}>Welcome, {identifier}</span>
           <button 
             onClick={() => router.push('/profile')}
             style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
+              background: 'linear-gradient(90deg, #e6c36b 0%, #bfa76a 100%)',
+              color: '#23272b',
+              border: '1px solid #bfa76a',
+              borderRadius: '8px',
+              fontWeight: 700,
+              fontSize: '16px',
+              boxShadow: '0 1px 4px #bfa76a55',
+              padding: '0.5rem 1.2rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
             }}
           >
             View Profile
@@ -154,12 +155,16 @@ export default function Home() {
           <button 
             onClick={handleLogout}
             style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
+              background: 'linear-gradient(90deg, #e6c36b 0%, #bfa76a 100%)',
+              color: '#23272b',
+              border: '1px solid #bfa76a',
+              borderRadius: '8px',
+              fontWeight: 700,
+              fontSize: '16px',
+              boxShadow: '0 1px 4px #bfa76a55',
+              padding: '0.5rem 1.2rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
             }}
           >
             Logout
@@ -167,38 +172,41 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Open Booster Button */}
-      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+      {/* Booster & Delete Buttons */}
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', justifyContent: 'center' }}>
         <button
           onClick={openBooster}
           style={{
             padding: '1rem 2rem',
-            backgroundColor: '#28a745',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
+            background: 'linear-gradient(90deg, #f7e7b0 0%, #bfa76a 100%)',
+            color: '#23272b',
+            border: '1px solid #bfa76a',
+            borderRadius: '12px',
             fontSize: '18px',
+            fontWeight: 700,
+            boxShadow: '0 1px 4px #bfa76a55',
+            marginRight: '1rem',
             cursor: 'pointer',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            marginRight: '1rem'
+            transition: 'all 0.2s',
           }}
         >
           Open Booster
         </button>
-        
         <button
           onClick={handleDeleteAllCards}
           disabled={deleting || cards.length === 0}
           style={{
             padding: '1rem 2rem',
-            backgroundColor: deleting ? '#ccc' : '#dc3545',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
+            background: deleting ? '#e6e6e6' : 'linear-gradient(90deg, #f7e7b0 0%, #bfa76a 100%)',
+            color: '#23272b',
+            border: '1px solid #bfa76a',
+            borderRadius: '12px',
             fontSize: '18px',
+            fontWeight: 700,
+            boxShadow: '0 1px 4px #bfa76a55',
+            opacity: deleting || cards.length === 0 ? 0.6 : 1,
             cursor: deleting || cards.length === 0 ? 'not-allowed' : 'pointer',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            opacity: deleting || cards.length === 0 ? 0.6 : 1
+            transition: 'all 0.2s',
           }}
         >
           {deleting ? 'Deleting...' : 'Delete All Cards'}
@@ -211,7 +219,7 @@ export default function Home() {
         boxShadow: '0 8px 32px 0 rgba(0,0,0,0.7)',
         padding: '2rem',
         borderRadius: '16px',
-        border: '2px solid #bfa76a',
+        border: '1px solid #bfa76a55',
         minHeight: '80vh',
         position: 'relative',
         overflow: 'hidden',
@@ -219,9 +227,12 @@ export default function Home() {
         {cards.length === 0 ? (
           <div style={{ 
             textAlign: 'center', 
-            color: '#666',
+            color: '#ffe8a3',
             padding: '3rem',
-            fontSize: '18px'
+            fontSize: '20px',
+            fontWeight: 600,
+            textShadow: '0 2px 8px #000, 0 0 2px #bfa76a',
+            fontFamily: 'serif',
           }}>
             No cards in your collection yet.<br />
             Open a booster to get started!

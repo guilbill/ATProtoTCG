@@ -9,7 +9,7 @@ const ImageField = ({ record }: { record: { value?: { name?: string; image?: { r
   
   return (
     <Image
-      src={`/api/blob?cid=${imageCid}`}
+      src={`/api/blobs/${imageCid}`}
       alt={`${record.value?.name || 'Card'} artwork`}
       width={60}
       height={60}

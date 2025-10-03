@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Edit, SimpleForm, TextInput, NumberInput, SelectInput, useRecordContext, useNotify, useRefresh } from "react-admin";
 import { useFormContext } from "react-hook-form";
 
-const ImageUploadField = ({ source, label }: { source: string; label: string }) => {
+const ImageUploadField = () => {
   const record = useRecordContext();
   const notify = useNotify();
   const refresh = useRefresh();
@@ -13,7 +13,7 @@ const ImageUploadField = ({ source, label }: { source: string; label: string }) 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // Get existing image CID if present
-  const existingImageCid = record?.value?.image?.ref?.ref?.$link;
+  const existingImageCid = record?.value?.image?.ref?.$link;
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -42,7 +42,7 @@ const ImageUploadField = ({ source, label }: { source: string; label: string }) 
       const result = await response.json();
       
       // Update the form value with the new image blob reference
-      setValue(source, result.blob, { shouldDirty: true });
+      setValue('value.image', result.blob, { shouldDirty: true });
 
       notify('Image uploaded successfully', { type: 'success' });
       refresh();
@@ -54,12 +54,12 @@ const ImageUploadField = ({ source, label }: { source: string; label: string }) 
     }
   };
 
-  const displayImageUrl = previewUrl || (existingImageCid ? `/api/blob?cid=${existingImageCid}` : null);
+  const displayImageUrl = previewUrl || (existingImageCid ? `/api/blobs/${existingImageCid}` : null);
 
   return (
     <div style={{ marginBottom: '1rem' }}>
       <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-        {label}
+        Card Artwork
       </label>
       
       {displayImageUrl && (
@@ -112,7 +112,7 @@ const TCGCardEdit = () => (
   <Edit>
     <SimpleForm>
       <TextInput source="value.name" label="Name" fullWidth />
-      <ImageUploadField source="value.image" label="Card Artwork" />
+      <ImageUploadField />
       <NumberInput source="value.attack" label="Attack" />
       <NumberInput source="value.defense" label="Defense" />
       <SelectInput 

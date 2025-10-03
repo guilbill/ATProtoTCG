@@ -1,0 +1,17 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "npm: dev (inspect)",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "env": {
+          "NODE_OPTIONS": "--inspect=9229"
+        },
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

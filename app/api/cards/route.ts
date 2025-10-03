@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AtpAgent } from '@atproto/api';
+import { AtpAgent, BlobRef } from '@atproto/api';
 import { getSession, getAgent, storeAgent } from '../../lib/sessionStore';
+import { Image } from '@atproto/api/dist/client/types/app/bsky/embed/images';
 
 export async function POST(req: NextRequest) {
   return handleCardRequest(req);
@@ -180,28 +181,18 @@ async function handleCardRequest(req: NextRequest) {
   }
 
   // Helper function to safely extract CID from image blob reference
-  function extractImageCid(image: Record<string, unknown> | undefined): string | undefined {
+  function extractImageCid(image: BlobRef | undefined): string | undefined {
+    console.log('Extracting image CID from:', image);
     if (!image) return undefined;
-    
-    // Try the nested structure: image.ref.ref.$link
-    const nestedRef = image.ref as Record<string, unknown> | undefined;
-    if (nestedRef?.ref) {
-      let cid = nestedRef.ref;
-      
-      // Handle CID objects like CID(bafkreiea4oobveruklpjcelbtascvf2ama27oqt4gbhubzc7ilgilhqc2a)
-      if (cid && typeof cid === 'object' && 'toString' in cid) {
-        cid = (cid as { toString(): string }).toString();
-      }
-      
-      if (typeof cid === 'string') {
-        // Remove CID() wrapper if present
-        return cid.replace(/^CID\((.+)\)$/, '$1');
-      }
-    }
-    
-    return undefined;
+    const cid = image?.toJSON()?.ref?.$link;
+    console.log(`image.ref : ${JSON.stringify(image)}`);
+    console.log(`image.ref.toJSON(): ${JSON.stringify(image?.toJSON())}`);
+    console.log(`image.ref.toJSON().ref: ${JSON.stringify(image?.toJSON()?.ref)}`);
+    console.log(`image.ref.toJSON().ref.$link: ${JSON.stringify(image?.toJSON()?.ref?.$link)}`);
+    return cid; 
   }
 
+  console.log('Fetched card records:', res.data.records);
   const cards = Array.isArray(res.data.records)
     ? res.data.records
         .map((r) => r.value)
@@ -213,13 +204,14 @@ async function handleCardRequest(req: NextRequest) {
           type: card.type,
           rarity: card.rarity,
           createdAt: card.createdAt,
-          imageCid: extractImageCid(card.image as Record<string, unknown> | undefined)
+          imageCid: extractImageCid(card.image as {ref: BlobRef} | undefined)
         }))
     : [];
     console.table(cards);
     return NextResponse.json({ cards });
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : 'Failed to fetch cards';
+    console.error('Error in cards API:', err);
     return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

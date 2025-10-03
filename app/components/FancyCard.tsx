@@ -29,7 +29,8 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card = { rarity: 'common',
     legendary: { primary: '#f59e0b', secondary: '#fbbf24', accent: '#fcd34d' }
   };
 
-  const colors = rarityColors[card.rarity];
+  // Fallback to 'common' if rarity is missing or invalid
+  const colors = rarityColors[card.rarity] || rarityColors['common'];
 
   // Helper function to check if card has an image
   const hasImage = () => !!(card.imageCid || card.image);
@@ -48,7 +49,7 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card = { rarity: 'common',
       // Remove CID() wrapper if present
       if (typeof cidString === 'string') {
         cidString = cidString.replace(/^CID\((.+)\)$/, '$1');
-        return `url(/api/blob?cid=${cidString})`;
+        return `url(/api/blobs/${cidString})`;
       }
     }
     

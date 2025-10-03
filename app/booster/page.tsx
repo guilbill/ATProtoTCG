@@ -38,6 +38,9 @@ export default function BoosterPage() {
       
       
       setStatus('Cards added! Returning to collection...');
+      setTimeout(() => {
+        router.push('/');
+      }, 1500);
       
     } catch {
       router.push('/login');

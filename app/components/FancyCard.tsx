@@ -9,6 +9,8 @@ interface Card {
   type: string;
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
   createdAt?: string;
+  image?: string; // For booster pack static images
+  imageCid?: string | { toString(): string }; // For uploaded AT-Proto blob CIDs - can be string or CID object
 }
 
 interface FancyCardProps {
@@ -28,6 +30,33 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true }) =
   };
 
   const colors = rarityColors[card.rarity];
+
+  // Helper function to check if card has an image
+  const hasImage = () => {
+    return !!(card.imageCid || card.image);
+  };
+
+  // Helper function to get card background
+  const getCardBackground = () => {
+    if (card.imageCid) {
+      // AT-Proto blob image - handle both string and CID object
+      let cidString = card.imageCid;
+      
+      // If it's a CID object, extract the string
+      if (typeof cidString === 'object' && cidString && 'toString' in cidString) {
+        cidString = cidString.toString();
+      }
+      
+      // Remove CID() wrapper if present
+      if (typeof cidString === 'string') {
+        cidString = cidString.replace(/^CID\((.+)\)$/, '$1');
+        return `url(/api/blob?cid=${cidString})`;
+      }
+    }
+    
+    // Fallback gradient
+    return `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`;
+  };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
@@ -125,7 +154,9 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true }) =
                 style={{
                   width: '100%',
                   height: '100%',
-                  background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
+                  background: getCardBackground(),
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -135,7 +166,7 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true }) =
                   textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
                 }}
               >
-                {card.name.charAt(0).toUpperCase()}
+                {!hasImage() && card.name.charAt(0).toUpperCase()}
               </div>
               <div className="image-overlay"></div>
               <div className="shine"></div>

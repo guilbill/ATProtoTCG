@@ -71,7 +71,7 @@ async function handleCardRequest(req: NextRequest) {
   let body: unknown = {};
   try {
     body = await req.json();
-  } catch (e) {
+  } catch {
     // empty or invalid JSON body — continue with session lookup
     body = {};
   }
@@ -118,6 +118,7 @@ async function handleCardRequest(req: NextRequest) {
     type: string;
     rarity: string;
     createdAt?: string;
+    image?: Record<string, unknown>; // AT-Proto blob reference - flexible typing for nested structure
   }
 
   function isCard(value: unknown): value is Card {
@@ -129,8 +130,31 @@ async function handleCardRequest(req: NextRequest) {
       typeof v.defense === 'number' &&
       typeof v.type === 'string' &&
       typeof v.rarity === 'string'
-      // imageCid and createdAt are optional, so we don't validate them
+      // image, createdAt are optional, so we don't validate them
     );
+  }
+
+  // Helper function to safely extract CID from image blob reference
+  function extractImageCid(image: Record<string, unknown> | undefined): string | undefined {
+    if (!image) return undefined;
+    
+    // Try the nested structure: image.ref.ref.$link
+    const nestedRef = image.ref as Record<string, unknown> | undefined;
+    if (nestedRef?.ref) {
+      let cid = nestedRef.ref;
+      
+      // Handle CID objects like CID(bafkreiea4oobveruklpjcelbtascvf2ama27oqt4gbhubzc7ilgilhqc2a)
+      if (cid && typeof cid === 'object' && 'toString' in cid) {
+        cid = (cid as { toString(): string }).toString();
+      }
+      
+      if (typeof cid === 'string') {
+        // Remove CID() wrapper if present
+        return cid.replace(/^CID\((.+)\)$/, '$1');
+      }
+    }
+    
+    return undefined;
   }
 
   const cards = Array.isArray(res.data.records)
@@ -143,9 +167,11 @@ async function handleCardRequest(req: NextRequest) {
           defense: card.defense,
           type: card.type,
           rarity: card.rarity,
-          createdAt: card.createdAt
+          createdAt: card.createdAt,
+          imageCid: extractImageCid(card.image as Record<string, unknown> | undefined)
         }))
     : [];
+    console.table(cards);
     return NextResponse.json({ cards });
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : 'Failed to fetch cards';

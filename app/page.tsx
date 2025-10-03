@@ -11,6 +11,8 @@ interface Card {
   type: string;
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
   createdAt?: string;
+  image?: string; // For booster pack static images
+  imageCid?: string | { toString(): string }; // For uploaded AT-Proto blob CIDs - can be string or CID object
 }
 
 export default function Home() {

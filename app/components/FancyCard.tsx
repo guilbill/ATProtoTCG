@@ -61,8 +61,8 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true }) =
     const rect = cardRef.current.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
-    const rotateX = (y - 50) * 0.1;
-    const rotateY = (50 - x) * 0.1;
+  const rotateX = (y - 50) * 0.35; // accentuate tilt
+  const rotateY = (50 - x) * 0.35; // accentuate tilt
     cardRef.current.style.transform = `
       perspective(1000px)
       rotateX(${rotateX}deg)
@@ -130,7 +130,7 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true }) =
         height: '360px',
         margin: '1rem',
         perspective: '1000px',
-        transition: 'all 0.3s ease',
+        transition: 'all 0.12s cubic-bezier(.4,2,.3,1)',
         '--card-primary': colors.primary,
         '--card-secondary': colors.secondary,
         '--card-accent': colors.accent,

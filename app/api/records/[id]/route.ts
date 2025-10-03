@@ -14,20 +14,24 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
   }
   // id is the record URI: at://did:plc:xxx/collection/rkey
   // Example: at://did:plc:xxx/app.bsky.graph.follow/3lsr7a722oq2g
-  const match = id.match(/^at:\/\/[^/]+\/([^/]+\.[^/]+\.[^/]+\.[^/]+)\/(.+)$/);
+  // NSID: one or more dot-separated segments, e.g. app.bsky.feed.post
   let collection = '';
   let rkey = '';
-  if (match) {
-    collection = match[1];
-    rkey = match[2];
+  const uriMatch = id.match(/^at:\/\/([^/]+)\/((?:[a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+)\/(.+)$/);
+  if (uriMatch) {
+    // uriMatch[2] is the collection NSID, uriMatch[3] is rkey
+    collection = uriMatch[2];
+    rkey = uriMatch[3];
   } else {
     // fallback: try splitting
-    const parts = id.split('/');
-    collection = parts.length >= 4 ? parts[2] + '/' + parts[3] : 'app.tcg.card';
-    rkey = parts.length >= 5 ? parts[4] : parts.pop() || '';
+    const parts = id.replace(/^at:\/\//, '').split('/');
+    // parts[1] is collection NSID, parts[2] is rkey
+    collection = parts.length >= 3 ? parts[1] : '';
+    rkey = parts.length >= 3 ? parts[2] : '';
   }
-  if (!collection) {
-    return NextResponse.json({ error: 'Invalid collection' }, { status: 400 });
+  // Validate collection as NSID: must have at least two dots
+  if (!collection || !/^([a-zA-Z0-9_-]+\.)+[a-zA-Z0-9_-]+$/.test(collection)) {
+    return NextResponse.json({ error: 'Invalid collection: must be a valid NSID' }, { status: 400 });
   }
   const res = await agent.com.atproto.repo.getRecord({
     repo: sessionData.did,

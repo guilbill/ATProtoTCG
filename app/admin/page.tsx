@@ -7,10 +7,13 @@ import {
   ListGuesser,
   Edit,
   SimpleForm,
-  TextField,
   useRecordContext,
+  TextField,
+  NumberField,
+  BooleanField,
+  DateField,
 } from "react-admin";
-import { JsonField } from "react-admin-json-view";
+// ...existing code...
 
 export default function AdminPage() {
   const [collections, setCollections] = useState<string[]>([]);
@@ -44,15 +47,30 @@ export default function AdminPage() {
     const record = useRecordContext();
     if (!record) return null;
 
+    // Display each field in value, inferring the field type
+  if (!record.value || typeof record.value !== 'object') return <SimpleForm>{null}</SimpleForm>;
+
+    const inferField = (key: string, value: any) => {
+  if (typeof value === 'string') {
+        // Try to infer date
+        if (/^\d{4}-\d{2}-\d{2}([Tt ]\d{2}:\d{2}:\d{2}(\.\d+)?([Zz]|([+-]\d{2}:\d{2})))?$/.test(value)) {
+          return <DateField key={key} source={`value.${key}`} label={key} />;
+        }
+        return <TextField key={key} source={`value.${key}`} label={key} />;
+      }
+  if (typeof value === 'number') {
+        return <NumberField key={key} source={`value.${key}`} label={key} />;
+      }
+  if (typeof value === 'boolean') {
+        return <BooleanField key={key} source={`value.${key}`} label={key} />;
+      }
+      // Fallback: display as string
+      return <TextField key={key} source={`value.${key}`} label={key} />;
+    };
+
     return (
       <SimpleForm>
-        {Object.keys(record).map((key) =>
-          key === "value" ? (
-            <JsonField key={key} source={key} label={key} />
-          ) : (
-            <TextField key={key} source={key} label={key} />
-          )
-        )}
+        {Object.entries(record.value).map(([key, value]) => inferField(key, value as unknown))}
       </SimpleForm>
     );
   }

@@ -11,7 +11,52 @@ export async function GET(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  return handleDeleteAllCards(req);
+  // Parse body for specific card URI
+  let body: unknown = {};
+  try {
+    body = await req.json();
+  } catch {
+    body = {};
+  }
+  const { uri } = (body as { uri?: string }) || {};
+  if (uri) {
+    return handleDeleteCard(req, uri);
+  } else {
+    return handleDeleteAllCards(req);
+  }
+// Delete a specific card by URI
+async function handleDeleteCard(req: NextRequest, uri: string) {
+  try {
+    let agent: AtpAgent | undefined;
+    const sid = req.cookies.get('atp_session')?.value;
+    if (sid) agent = getAgent(sid);
+    if (!agent && sid) {
+      const sess = getSession(sid);
+      if (sess) {
+        agent = new AtpAgent({ service: 'https://bsky.social' });
+        await agent.resumeSession(sess);
+        storeAgent(sid, agent);
+      }
+    }
+    if (!agent) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+    const did = agent.session?.did;
+    if (!did) throw new Error('No DID after authentication');
+    // Extract rkey from URI
+    const rkey = uri.split('/').pop();
+    if (!rkey) throw new Error('Invalid card URI');
+    await agent.com.atproto.repo.deleteRecord({
+      repo: did,
+      collection: 'app.tcg.card',
+      rkey,
+    });
+    return NextResponse.json({ success: true, message: `Deleted card ${uri}` });
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : 'Failed to delete card';
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
+  }
+}
 }
 
 async function handleDeleteAllCards(req: NextRequest) {

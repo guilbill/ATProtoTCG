@@ -1,4 +1,4 @@
-import { DataProvider, RaRecord } from "react-admin";
+import { DataProvider, DeleteResult, RaRecord } from "react-admin";
 
 export interface ATProtoRecord extends RaRecord {
   uri: string;
@@ -50,7 +50,21 @@ const atprotoDataProvider: DataProvider = {
   },
   
   create: () => Promise.reject("Not implemented"),
-  delete: () => Promise.reject("Not implemented"),
+  delete: async (resource: string, params): Promise<DeleteResult> => {
+    if (resource !== 'app.tcg.card') {
+      throw new Error(`Delete operation not supported for AT-Proto resource: ${resource}`);
+    }
+    const id = String(params.id);
+    const response = await fetch(`/api/cards`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uri: id }),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to delete card');
+    }
+    return { data: { id } };
+  },
   getMany: () => Promise.reject("Not implemented"),
   getManyReference: () => Promise.reject("Not implemented"),
   updateMany: () => Promise.reject("Not implemented"),

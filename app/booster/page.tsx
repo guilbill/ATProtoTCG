@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { FancyCard } from '../components/FancyCard';
 
 export type Card = {
@@ -15,51 +15,10 @@ export type Card = {
 };
 
 export default function BoosterPage() {
-  const [cards, setCards] = useState<Card[]>([]);
   const [opened, setOpened] = useState(false);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const router = useRouter();
-  
-  const images = useMemo(() => [
-    'ADRIEN.JPEG',
-    'ANNIVERSARY.JPEG', 
-    'ANY.JPEG',
-    'CAMARCHE.JPEG',
-    'CODESANDBOX.JPEG',
-    'CONTRETOUS.JPEG',
-    'FRANCOIS.JPEG',
-    'GATSBY.JPEG',
-    'GILDAS.JPEG',
-    'JEREMIE.JPEG',
-    'MUI.JPEG',
-    'PROFESSIONALSERVICES.JPEG',
-  ], []);
-
-  // helper: convert image URL to base64 (no data: prefix)
-  function randomStat() {
-    return Math.floor(Math.random() * 10) + 1; // 1..10
-  }
-
-  function randomRarity(): 'common' | 'rare' | 'epic' | 'legendary' {
-    const list = ['common', 'rare', 'epic', 'legendary'] as const;
-    return list[Math.floor(Math.random() * list.length)];
-  }
-
-  useEffect(() => {
-    // Generate 3 distinct random cards
-    const shuffled = [...images].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, 3);
-    const newCards: Card[] = selected.map(img => ({
-      name: img.replace(/\.JPEG$/i, '').replace(/_/g, ' '),
-      attack: randomStat(),
-      defense: randomStat(),
-      type: 'magic',
-      rarity: randomRarity(),
-      image: img,
-    }));
-    setCards(newCards);
-  }, [images]);
 
   const openBooster = async () => {
     if (saving) return;
@@ -67,33 +26,18 @@ export default function BoosterPage() {
     setSaving(true);
     setStatus('Adding cards to your collection...');
     try {
-      let savedCount = 0;
-      for (const card of cards) {
-        const cardPayload = {
-          name: card.name,
-          attack: card.attack,
-          defense: card.defense,
-          type: card.type,
-          rarity: card.rarity,
-        };
 
-        const res = await fetch('/api/create-card', {
+        const res = await fetch('/api/booster', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'same-origin',
-          body: JSON.stringify({ card: cardPayload }),
         });
         
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to save card');
-        savedCount++;
-        setStatus(`Saved ${savedCount}/${cards.length} cards...`);
-      }
+      
       
       setStatus('Cards added! Returning to collection...');
-      setTimeout(() => {
-        router.push('/');
-      }, 1500);
       
     } catch {
       router.push('/login');
@@ -159,10 +103,9 @@ export default function BoosterPage() {
           marginBottom: '3rem',
           flexWrap: 'wrap'
         }}>
-          {cards.map((card, i) => (
+          {[0,1,2].map((card, i) => (
             <FancyCard
               key={i}
-              card={card}
             />
           ))}
         </div>

@@ -14,11 +14,11 @@ interface Card {
 }
 
 interface FancyCardProps {
-  card: Card;
+  card?: Card;
   revealed?: boolean;
 }
 
-export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true }) => {
+export const FancyCard: React.FC<FancyCardProps> = ({ card = { rarity: 'common', imageCid: undefined, image: {} }, revealed = true }) => {
   const [isHovered, setIsHovered] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 

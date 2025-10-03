@@ -410,53 +410,43 @@ export default function ProfilePage() {
                 </div>
                 
                 <div style={{ marginBottom: '0.5rem' }}>
-                  <p style={{ margin: '0.25rem 0', fontSize: '14px' }}>
-                    <strong>MIME Type:</strong> {blob.mimeType || 'unknown'}
-                  </p>
-                  <p style={{ margin: '0.25rem 0', fontSize: '14px' }}>
-                    <strong>Size:</strong> {blob.size ? `${blob.size} bytes` : 'unknown'}
-                  </p>
-                  {blob.recordUri && (
-                    <p style={{ margin: '0.25rem 0', fontSize: '14px' }}>
-                      <strong>Used in:</strong> {blob.recordUri}
-                    </p>
-                  )}
                   
-                  {/* Download/View Buttons */}
-                  <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem' }}>
-                    <a
-                      href={`/api/blobs/${blob.cid}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        padding: '0.25rem 0.5rem',
-                        backgroundColor: '#3b82f6',
-                        color: 'white',
-                        textDecoration: 'none',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        border: 'none',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {blob.mimeType?.startsWith('image/') ? 'View Image' : 'Download'}
-                    </a>
-                    <a
-                      href={`/api/blobs/${blob.cid}`}
-                      download={`blob-${blob.cid}`}
-                      style={{
-                        padding: '0.25rem 0.5rem',
-                        backgroundColor: '#10b981',
-                        color: 'white',
-                        textDecoration: 'none',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        border: 'none',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Download
-                    </a>
+                  {/* Always display as image */}
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <strong>Preview:</strong>
+                    <div style={{ marginTop: '0.25rem' }}>
+                      <img
+                        src={`/api/blobs/${blob.cid}`}
+                        alt={`Blob ${blob.cid}`}
+                        style={{
+                          maxWidth: '200px',
+                          maxHeight: '150px',
+                          objectFit: 'contain',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '4px',
+                          backgroundColor: '#f9fafb'
+                        }}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const errorDiv = document.createElement('div');
+                          errorDiv.style.cssText = `
+                            width: 200px; 
+                            height: 150px; 
+                            background-color: #f3f4f6; 
+                            border: 1px solid #d1d5db;
+                            border-radius: 4px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 12px;
+                            color: #6b7280;
+                          `;
+                          errorDiv.textContent = 'Image preview failed';
+                          target.parentNode?.insertBefore(errorDiv, target.nextSibling);
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
                 

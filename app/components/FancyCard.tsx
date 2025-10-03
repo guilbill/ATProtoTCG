@@ -32,9 +32,7 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true }) =
   const colors = rarityColors[card.rarity];
 
   // Helper function to check if card has an image
-  const hasImage = () => {
-    return !!(card.imageCid || card.image);
-  };
+  const hasImage = () => !!(card.imageCid || card.image);
 
   // Helper function to get card background
   const getCardBackground = () => {
@@ -128,8 +126,8 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true }) =
       ref={cardRef}
       className="card-container fancy-card-effect"
       style={{
-        width: '240px', // slightly narrower for better image fit
-        height: '360px', // keep aspect ratio close to image
+        width: '240px',
+        height: '360px',
         margin: '1rem',
         perspective: '1000px',
         transition: 'all 0.3s ease',
@@ -140,6 +138,9 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true }) =
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
+        border: '3px solid #bfa76a',
+        boxShadow: '0 0 32px 0 #000, 0 0 12px 2px #bfa76a inset',
+        filter: 'drop-shadow(0 0 8px #bfa76a)',
       } as React.CSSProperties}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
@@ -151,52 +152,6 @@ export const FancyCard: React.FC<FancyCardProps> = ({ card, revealed = true }) =
           <div className="image-overlay" style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', borderRadius: '15px', pointerEvents: 'none'}}></div>
           <div className="shine" style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', borderRadius: '15px', pointerEvents: 'none'}}></div>
           <div className="glare" style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', borderRadius: '15px', pointerEvents: 'none'}}></div>
-          <div className="card-content" style={{
-            position: 'relative',
-            zIndex: 2,
-            background: hasImage() ? 'rgba(255,255,255,0.10)' : 'transparent',
-            borderRadius: '15px',
-            padding: '1rem',
-            color: 'black',
-            textShadow: hasImage() ? '0 1px 4px rgba(0,0,0,0.7)' : 'none',
-          }}>
-            <div className="card-header">
-              <h3 className="card-name">{card.name}</h3>
-              <div className="rarity-badge">{card.rarity}</div>
-            </div>
-            <div className="card-image-container">
-              {/* Only show fallback letter if no image */}
-              {!hasImage() && (
-                <div className="card-visual" style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '3rem',
-                  color: 'white',
-                  fontWeight: 'bold',
-                  textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
-                }}>
-                  {card.name.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
-            <div className="card-stats">
-              <div className="stat-row">
-                <span className="stat-label">Type</span>
-                <span className="stat-value">{card.type}</span>
-              </div>
-              <div className="stat-row">
-                <span className="stat-label">ATK</span>
-                <span className="stat-value attack">{card.attack}</span>
-              </div>
-              <div className="stat-row">
-                <span className="stat-label">DEF</span>
-                <span className="stat-value defense">{card.defense}</span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

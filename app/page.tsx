@@ -207,10 +207,14 @@ export default function Home() {
 
       {/* Cards Grid */}
       <div style={{
-        backgroundColor: 'white',
+        background: 'radial-gradient(ellipse at top left, #23272b 60%, #181a1b 100%)',
+        boxShadow: '0 8px 32px 0 rgba(0,0,0,0.7)',
         padding: '2rem',
-        borderRadius: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        borderRadius: '16px',
+        border: '2px solid #bfa76a',
+        minHeight: '80vh',
+        position: 'relative',
+        overflow: 'hidden',
       }}>
         {cards.length === 0 ? (
           <div style={{ 
@@ -225,9 +229,13 @@ export default function Home() {
         ) : (
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', 
-            gap: '2rem',
-            justifyItems: 'center'
+            gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', 
+            gap: '2.5rem',
+            justifyItems: 'center',
+            background: 'rgba(20,22,24,0.85)',
+            borderRadius: '12px',
+            boxShadow: '0 4px 24px 0 rgba(0,0,0,0.8)',
+            padding: '2rem',
           }}>
             {cards.map((card, i) => (
               <FancyCard key={i} card={card} revealed={true} />
